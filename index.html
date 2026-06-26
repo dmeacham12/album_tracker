@@ -290,14 +290,14 @@ function switchTab(tab, el) {
 // ── Pre-baked sheet URL — visitors see your data automatically ──
 // Set this to your published Google Sheets CSV URL to auto-load on page open.
 // Leave empty ('') to show the input screen instead.
-const SHEET_URL = '';
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdLG7svNSJqXZZ5DsQM9mhUmC4hTXCCNCQcHtfaAmqmJV_hJFSkQ5QvWj7h0PcsNgJdPswb4IQCgae/pub?output=csv';
 
 function resetToUpload() {
   document.getElementById('mainContent').style.display = 'none';
   document.getElementById('uploadScreen').style.display = 'block';
   document.getElementById('reloadBtn').style.display = 'none';
   const fi = document.getElementById('fileInput');
-  if (fi) fi.value = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdLG7svNSJqXZZ5DsQM9mhUmC4hTXCCNCQcHtfaAmqmJV_hJFSkQ5QvWj7h0PcsNgJdPswb4IQCgae/pub?output=csv';
+  if (fi) fi.value = '';
 }
 
 async function loadFromUrl() {
