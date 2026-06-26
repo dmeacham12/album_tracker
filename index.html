@@ -486,6 +486,11 @@ function makeRecentCard(a) {
 
 function parseDate(str) {
   if (!str) return null;
+  // Handle M/D/YYYY format explicitly to avoid browser parsing inconsistencies
+  const mdyMatch = str.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdyMatch) {
+    return new Date(parseInt(mdyMatch[3]), parseInt(mdyMatch[1]) - 1, parseInt(mdyMatch[2]));
+  }
   const d = new Date(str);
   return isNaN(d.getTime()) ? null : d;
 }
