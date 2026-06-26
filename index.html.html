@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Album Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0ebe1;
+    --text2: #9a9490;
+    --text3: #5a5652;
+    --gold: #c9a84c;
+    --green: #27a868;
+    --red: #c0392b;
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  header { margin-bottom: 2.5rem; }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
+  h1 { font-family: var(--font-display); font-size: 32px; font-weight: 400; letter-spacing: -0.5px; display: flex; align-items: center; gap: 12px; }
+
+
+  /* Re-upload button (shown when data is loaded) */
+  .reload-btn {
+    background: none; border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+    color: var(--text2); font-family: var(--font-body); font-size: 12px;
+    padding: 6px 14px; cursor: pointer; transition: border-color 0.15s, color 0.15s;
+  }
+  .reload-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 14px; }
+
+  /* Recent shelf */
+  .recent-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 3rem; }
+  .recent-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); display: flex; gap: 12px; padding: 12px; align-items: flex-start; transition: border-color 0.15s; }
+  .recent-card:hover { border-color: var(--border2); }
+  .recent-cover { width: 56px; height: 56px; flex-shrink: 0; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface2); }
+  .recent-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .recent-cover-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 18px; color: var(--text3); }
+  .recent-info { min-width: 0; }
+  .recent-title { font-family: var(--font-display); font-size: 14px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recent-artist { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .recent-date { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .recent-stars { font-size: 11px; color: var(--gold); margin-top: 4px; }
+
+  /* Top shelf */
+  .top-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; margin-bottom: 3rem; }
+  .album-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color 0.15s, transform 0.15s; }
+  .album-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .cover { width: 100%; aspect-ratio: 1; background: var(--surface2); position: relative; overflow: hidden; }
+  .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cover-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 32px; color: var(--text3); }
+  .rating-badge { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.75); font-size: 12px; font-weight: 600; padding: 3px 7px; border-radius: 20px; }
+  .card-body { padding: 10px 12px 14px; }
+  .album-title { font-family: var(--font-display); font-size: 14px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .album-artist { font-size: 11px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .album-stars { font-size: 12px; color: var(--gold); margin-top: 5px; }
+  .album-tracks { font-size: 11px; color: var(--text3); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Tabs */
+  .tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 2rem; }
+  .tab { font-family: var(--font-body); font-size: 13px; font-weight: 500; padding: 10px 20px; cursor: pointer; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); transition: color 0.15s, border-color 0.15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--gold); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Metrics */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 2rem; }
+  .metric { background: var(--surface); border-radius: var(--radius-sm); padding: 16px; }
+  .metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .metric-value { font-family: var(--font-display); font-size: 26px; line-height: 1; }
+
+  /* Charts */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 2rem; }
+  @media (max-width: 600px) { .charts-row { grid-template-columns: 1fr; } }
+  .chart-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  .chart-title { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .bar-label { font-size: 12px; color: var(--text2); width: 72px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-wrap { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+  .bar-val { font-size: 12px; color: var(--text2); min-width: 28px; text-align: right; }
+
+  .no-data { font-size: 12px; color: var(--text3); padding: 8px 0; }
+
+  /* Dual-mode input screen */
+  .input-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+  @media (max-width: 600px) { .input-modes { grid-template-columns: 1fr; } }
+
+  .mode-card {
+    background: var(--surface); border: 0.5px solid var(--border2);
+    border-radius: var(--radius); padding: 1.5rem; display: flex;
+    flex-direction: column; gap: 12px;
+  }
+  .mode-card.primary { border-color: var(--gold); }
+  .mode-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
+  .mode-title { font-family: var(--font-display); font-size: 18px; font-weight: 400; }
+  .mode-desc { font-size: 12px; color: var(--text2); line-height: 1.7; flex: 1; }
+  .mode-desc strong { color: var(--text); }
+
+  .url-input-row { display: flex; gap: 8px; }
+  .url-input-row input {
+    flex: 1; background: var(--surface2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); color: var(--text); font-family: var(--font-body);
+    font-size: 12px; padding: 9px 12px; outline: none; transition: border-color 0.15s; min-width: 0;
+  }
+  .url-input-row input:focus { border-color: var(--gold); }
+  .url-input-row input::placeholder { color: var(--text3); }
+  .btn-gold {
+    background: var(--gold); border: none; border-radius: var(--radius-sm);
+    color: #0f0f0f; cursor: pointer; font-family: var(--font-body); font-size: 12px;
+    font-weight: 600; padding: 9px 16px; white-space: nowrap; transition: opacity 0.15s; flex-shrink: 0;
+  }
+  .btn-gold:hover { opacity: 0.85; }
+  .btn-gold:disabled { opacity: 0.45; cursor: default; }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border2); border-radius: var(--radius-sm);
+    padding: 1.5rem 1rem; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; background: var(--surface2); position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-zone p { font-size: 12px; color: var(--text2); }
+  .upload-zone strong { color: var(--gold); }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 0.5px solid var(--border2); color: var(--text); font-size: 13px; padding: 10px 20px; border-radius: 20px; display: none; z-index: 99; white-space: nowrap; }
+
+  /* ── Mobile ── */
+  @media (max-width: 480px) {
+    .container { padding: 1.25rem 1rem 3rem; }
+    h1 { font-size: 24px; }
+    .header-inner { margin-bottom: 1rem; }
+
+    /* Upload */
+    .upload-zone { padding: 1.75rem 1.25rem; }
+    .upload-zone h2 { font-size: 18px; }
+    .steps { grid-template-columns: 1fr; }
+
+    /* Recent shelf — single column horizontal cards */
+    .recent-shelf { grid-template-columns: 1fr; gap: 10px; margin-bottom: 2rem; }
+
+    /* Top shelf — 2 columns on mobile */
+    .top-shelf { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 2rem; }
+    .album-title { font-size: 13px; }
+    .card-body { padding: 8px 10px 10px; }
+
+    /* Metrics — 2 columns */
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .metric { padding: 12px; }
+    .metric-value { font-size: 22px; }
+
+    /* Charts — single column */
+    .charts-row { grid-template-columns: 1fr; gap: 12px; }
+    .chart-box { padding: 1rem; }
+
+    /* Bar labels wider on mobile so text fits */
+    .bar-label { width: 88px; font-size: 11px; }
+    .bar-val { font-size: 11px; }
+
+    /* Tabs — fill width */
+    .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tab { padding: 10px 16px; font-size: 13px; white-space: nowrap; }
+
+    /* Reload button smaller */
+    .reload-btn { font-size: 11px; padding: 5px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-inner">
+      <h1>💿 Album Tracker</h1>
+      <button class="reload-btn" id="reloadBtn" style="display:none;" onclick="resetToUpload()">↑ Change data source</button>
+    </div>
+  </header>
+
+  <!-- Input screen -->
+  <div id="uploadScreen">
+    <div class="input-modes">
+
+      <!-- Mode A: Live URL -->
+      <div class="mode-card primary">
+        <div>
+          <p class="mode-badge">⚡ Live &amp; Auto-updating</p>
+          <p class="mode-title">Google Sheet URL</p>
+        </div>
+        <p class="mode-desc">Paste your published CSV link and this page fetches your latest data every time it loads — perfect for sharing. Works when hosted online (GitHub Pages, Netlify, etc.)</p>
+        <div class="url-input-row">
+          <input type="text" id="csvUrl" placeholder="https://docs.google.com/…/pub?output=csv" />
+          <button class="btn-gold" id="loadUrlBtn" onclick="loadFromUrl()">Load</button>
+        </div>
+      </div>
+
+      <!-- Mode B: File upload -->
+      <div class="mode-card">
+        <div>
+          <p class="mode-badge">📂 Manual Upload</p>
+          <p class="mode-title">Upload a CSV file</p>
+        </div>
+        <p class="mode-desc">Download your sheet as a CSV file and upload it here. Great for local use or sharing the tracker with friends who have their own sheet.</p>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" accept=".csv,text/csv" id="fileInput" onchange="handleFile(this.files[0])">
+          <p>Drop file here or <strong>click to browse</strong></p>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="background:var(--surface);border-radius:var(--radius);padding:1.25rem 1.5rem;">
+      <p style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">How to get your CSV from Google Sheets</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
+        <div style="font-size:12px;color:var(--text2);line-height:1.7;"><span style="color:var(--gold);font-weight:600;">1 &nbsp;</span>Open your Google Sheet → <strong>File → Share → Publish to web</strong></div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.7;"><span style="color:var(--gold);font-weight:600;">2 &nbsp;</span>Select your sheet tab and choose <strong>Comma-separated values (.csv)</strong></div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.7;"><span style="color:var(--gold);font-weight:600;">3 &nbsp;</span>Click <strong>Publish</strong> — copy the URL for live mode, or click it to download for file upload</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content (hidden until CSV loaded) -->
+  <div id="mainContent" style="display:none;">
+    <div id="recentSection" style="margin-bottom:2.5rem;">
+      <p class="section-label">Recently Listened</p>
+      <div class="recent-shelf" id="recentShelf"></div>
+    </div>
+
+    <p class="section-label">Top Rated</p>
+    <div class="top-shelf" id="topShelf"></div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('stats', this)">Stats</button>
+      <button class="tab" onclick="switchTab('all', this)">All Albums</button>
+    </div>
+
+    <div id="panel-stats" class="panel active">
+      <div class="metrics-grid" id="metricsRow"></div>
+      <div class="charts-row">
+        <div class="chart-box"><p class="chart-title">Albums by Decade</p><div id="decadeChart"></div></div>
+        <div class="chart-box"><p class="chart-title">Albums by Genre</p><div id="genreChart"></div></div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-box"><p class="chart-title">Avg Rating by Decade</p><div id="decadeRatingChart"></div></div>
+        <div class="chart-box"><p class="chart-title">Avg Rating by Genre</p><div id="genreRatingChart"></div></div>
+      </div>
+    </div>
+
+    <div id="panel-all" class="panel">
+      <div class="top-shelf" id="allShelf"></div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let albums = [];
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+// ── Pre-baked sheet URL — visitors see your data automatically ──
+// Set this to your published Google Sheets CSV URL to auto-load on page open.
+// Leave empty ('') to show the input screen instead.
+const SHEET_URL = '';
+
+function resetToUpload() {
+  document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('uploadScreen').style.display = 'block';
+  document.getElementById('reloadBtn').style.display = 'none';
+  const fi = document.getElementById('fileInput');
+  if (fi) fi.value = '';
+}
+
+async function loadFromUrl() {
+  let url = (document.getElementById('csvUrl').value || '').trim();
+  if (!url) { showToast('Paste your Google Sheet CSV URL first.'); return; }
+
+  // Auto-fix URL formats
+  const pubMatch = url.match(/\/spreadsheets\/d\/e\/([a-zA-Z0-9_-]+)/);
+  const editMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  if (pubMatch && !url.includes('output=csv')) {
+    const gid = (url.match(/[?&]gid=(\d+)/) || [])[1] || '0';
+    url = `https://docs.google.com/spreadsheets/d/e/${pubMatch[1]}/pub?output=csv&gid=${gid}`;
+  } else if (editMatch && !url.includes('output=csv')) {
+    const gid = (url.match(/[?&]gid=(\d+)/) || [])[1] || '0';
+    url = `https://docs.google.com/spreadsheets/d/${editMatch[1]}/export?format=csv&gid=${gid}`;
+  }
+
+  const btn = document.getElementById('loadUrlBtn');
+  btn.textContent = 'Loading…'; btn.disabled = true;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    if (text.trim().startsWith('<')) throw new Error('Got HTML instead of CSV — check the URL and that the sheet is published.');
+    await processCSV(text);
+  } catch(e) {
+    showToast('Could not load sheet: ' + e.message);
+  } finally {
+    btn.textContent = 'Load'; btn.disabled = false;
+  }
+}
+
+// Drag and drop
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+
+function handleFile(file) {
+  if (!file) return;
+  if (!file.name.endsWith('.csv') && file.type !== 'text/csv' && file.type !== 'application/csv') {
+    showToast('Please upload a .csv file');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => processCSV(e.target.result);
+  reader.readAsText(file);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
+  return lines.slice(1).map(line => {
+    const vals = [];
+    let cur = '', inQ = false;
+    for (const c of line) {
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { vals.push(cur); cur = ''; }
+      else { cur += c; }
+    }
+    vals.push(cur);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] || '').replace(/^"|"$/g, '').trim(); });
+    return obj;
+  }).filter(r => r['album title'] || r['album']);
+}
+
+function normalize(row) {
+  return {
+    rating: parseFloat(row['personal rating'] || row['rating'] || 0) || 0,
+    title: row['album title'] || row['album'] || '',
+    artist: row['artist'] || '',
+    releaseDate: row['release date'] || row['release year'] || '',
+    dateListened: row['date listened'] || row['date'] || '',
+    favTracks: row['favorite tracks'] || row['fav tracks'] || '',
+    genre: row['genre'] || '',
+    art: null
+  };
+}
+
+async function fetchArt(artist, title) {
+  const LASTFM_KEY = 'b25b959554ed76058ac220b7b2e0a026';
+  try {
+    const url = `https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LASTFM_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.album && data.album.image) {
+      const images = data.album.image;
+      // Last.fm returns sizes: small, medium, large, extralarge, mega
+      const mega = images.find(i => i.size === 'mega') || images.find(i => i.size === 'extralarge') || images[images.length - 1];
+      const imgUrl = mega && mega['#text'];
+      if (imgUrl && imgUrl.length > 0) return imgUrl;
+    }
+  } catch(e) { console.warn('Last.fm fetch failed:', artist, title, e); }
+
+  // Fallback: iTunes (works on some networks)
+  try {
+    const q = encodeURIComponent(artist + ' ' + title);
+    const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=3`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        const imgUrl = data.results[0].artworkUrl100;
+        if (imgUrl) return imgUrl.replace('100x100bb', '600x600bb');
+      }
+    }
+  } catch(e) { console.warn('iTunes fallback failed:', artist, title, e); }
+
+  return null;
+}
+
+function initials(title) {
+  return (title || '?').split(' ').slice(0,2).map(w => w[0] || '').join('').toUpperCase() || '?';
+}
+
+function starsStr(rating) {
+  const full = Math.round(rating / 2);
+  return '★'.repeat(Math.max(0,full)) + '☆'.repeat(Math.max(0,5-full)) + '  ' + rating.toFixed(1);
+}
+
+function ratingColor(r) {
+  if (r >= 8) return '#27a868';
+  if (r >= 6) return '#c9a84c';
+  return '#c0392b';
+}
+
+function makeAlbumCard(a) {
+  const card = document.createElement('div');
+  card.className = 'album-card';
+  const coverDiv = document.createElement('div');
+  coverDiv.className = 'cover';
+  coverDiv.dataset.albumKey = a.title + '::' + a.artist;
+  if (a.art) {
+    const img = document.createElement('img');
+    img.src = a.art; img.alt = a.title + ' cover'; img.loading = 'lazy';
+    coverDiv.appendChild(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'cover-ph'; ph.textContent = initials(a.title);
+    coverDiv.appendChild(ph);
+  }
+  const badge = document.createElement('div');
+  badge.className = 'rating-badge';
+  badge.textContent = a.rating.toFixed(1);
+  badge.style.color = ratingColor(a.rating);
+  coverDiv.appendChild(badge);
+  card.appendChild(coverDiv);
+  const body = document.createElement('div');
+  body.className = 'card-body';
+  body.innerHTML = `<p class="album-title" title="${a.title}">${a.title}</p>
+    <p class="album-artist">${a.artist}</p>
+    <p class="album-stars">${starsStr(a.rating)}</p>
+    ${a.favTracks ? `<p class="album-tracks" title="${a.favTracks}">♪ ${a.favTracks}</p>` : ''}`;
+  card.appendChild(body);
+  return card;
+}
+
+function makeRecentCard(a) {
+  const card = document.createElement('div');
+  card.className = 'recent-card';
+  const coverDiv = document.createElement('div');
+  coverDiv.className = 'recent-cover';
+  coverDiv.dataset.albumKey = a.title + '::' + a.artist;
+  if (a.art) {
+    coverDiv.innerHTML = `<img src="${a.art}" alt="${a.title}" loading="lazy">`;
+  } else {
+    coverDiv.innerHTML = `<div class="recent-cover-ph">${initials(a.title)}</div>`;
+  }
+  card.appendChild(coverDiv);
+  const info = document.createElement('div');
+  info.className = 'recent-info';
+  info.innerHTML = `<p class="recent-title" title="${a.title}">${a.title}</p>
+    <p class="recent-artist">${a.artist}</p>
+    <p class="recent-date">${a.dateListened}</p>
+    <p class="recent-stars">${starsStr(a.rating)}</p>`;
+  card.appendChild(info);
+  return card;
+}
+
+function parseDate(str) {
+  if (!str) return null;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function renderBarChart(id, data, maxVal, colorFn) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  if (!data.length) {
+    el.innerHTML = '<p class="no-data">No data yet — add a Genre column to your sheet!</p>';
+    return;
+  }
+  data.forEach(item => {
+    const pct = maxVal > 0 ? Math.round(item.value / maxVal * 100) : 0;
+    const color = colorFn ? colorFn(item.value) : 'var(--gold)';
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `<span class="bar-label" title="${item.label}">${item.label}</span>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%; background:${color};"></div></div>
+      <span class="bar-val">${item.display}</span>`;
+    el.appendChild(row);
+  });
+}
+
+function renderStats() {
+  const rated = albums.filter(a => a.rating > 0);
+  const avg = rated.length ? rated.reduce((s,a) => s+a.rating,0) / rated.length : 0;
+  const artistMap = {};
+  albums.forEach(a => { artistMap[a.artist] = (artistMap[a.artist]||0)+1; });
+  const topArtist = Object.entries(artistMap).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('metricsRow').innerHTML = `
+    <div class="metric"><p class="metric-label">Total Albums</p><p class="metric-value">${albums.length}</p></div>
+    <div class="metric"><p class="metric-label">Avg Rating</p><p class="metric-value" style="color:${ratingColor(avg)}">${avg.toFixed(1)}</p></div>
+    <div class="metric"><p class="metric-label">Artists</p><p class="metric-value">${Object.keys(artistMap).length}</p></div>
+    <div class="metric"><p class="metric-label">Top Artist</p><p class="metric-value" style="font-size:15px;padding-top:4px;">${topArtist ? topArtist[0] : '—'}</p></div>`;
+
+  function extractYear(str) {
+    if (!str) return null;
+    const match = String(str).match(/\b(19\d{2}|20\d{2})\b/);
+    return match ? parseInt(match[1]) : null;
+  }
+
+  const decadeCount = {}, decadeRatings = {};
+  albums.forEach(a => {
+    const yr = extractYear(a.releaseDate);
+    if (yr) {
+      const dec = (Math.floor(yr/10)*10) + 's';
+      decadeCount[dec] = (decadeCount[dec]||0)+1;
+      if (!decadeRatings[dec]) decadeRatings[dec] = [];
+      if (a.rating>0) decadeRatings[dec].push(a.rating);
+    }
+  });
+  const decData = Object.entries(decadeCount).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,v])=>({label:k,value:v,display:String(v)}));
+  renderBarChart('decadeChart', decData, Math.max(...decData.map(d=>d.value),1), ()=>'var(--gold)');
+
+  const decRateData = Object.entries(decadeRatings).filter(([,v])=>v.length).sort((a,b)=>a[0]<b[0]?-1:1)
+    .map(([k,v])=>{ const a=v.reduce((s,x)=>s+x,0)/v.length; return {label:k,value:a,display:a.toFixed(1)}; });
+  renderBarChart('decadeRatingChart', decRateData.slice(0,6), 10, ratingColor);
+
+  const genreCount = {}, genreRatings = {};
+  albums.forEach(a => {
+    const g = (a.genre||'').trim();
+    if (g) {
+      genreCount[g] = (genreCount[g]||0)+1;
+      if (!genreRatings[g]) genreRatings[g] = [];
+      if (a.rating>0) genreRatings[g].push(a.rating);
+    }
+  });
+  const genData = Object.entries(genreCount).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>({label:k,value:v,display:String(v)}));
+  genData.length
+    ? renderBarChart('genreChart', genData, Math.max(...genData.map(d=>d.value),1), ()=>'var(--gold)')
+    : (document.getElementById('genreChart').innerHTML = '<p class="no-data">Add a Genre column to your sheet to see this.</p>');
+
+  const genRateData = Object.entries(genreRatings).filter(([,v])=>v.length)
+    .map(([k,v])=>{ const a=v.reduce((s,x)=>s+x,0)/v.length; return {label:k,value:a,display:a.toFixed(1)}; })
+    .sort((a,b)=>b.value-a.value).slice(0,6);
+  genRateData.length
+    ? renderBarChart('genreRatingChart', genRateData, 10, ratingColor)
+    : (document.getElementById('genreRatingChart').innerHTML = '<p class="no-data">Add a Genre column to see avg ratings.</p>');
+}
+
+async function processCSV(text) {
+  const rows = parseCSV(text);
+  if (!rows.length) { showToast('No album rows found — check your column names.'); return; }
+
+  albums = rows.map(normalize);
+  showToast(`Loaded ${albums.length} albums ✓`);
+
+  const byRating = [...albums].sort((a,b) => b.rating - a.rating);
+  const top5 = byRating.slice(0,5);
+  const withDates = albums.filter(a => parseDate(a.dateListened)).sort((a,b) => parseDate(b.dateListened)-parseDate(a.dateListened));
+  const recent = withDates.slice(0,2);
+
+  // Render cards immediately with placeholders
+  const topShelf = document.getElementById('topShelf');
+  topShelf.innerHTML = '';
+  top5.forEach(a => topShelf.appendChild(makeAlbumCard(a)));
+
+  const recentShelf = document.getElementById('recentShelf');
+  recentShelf.innerHTML = '';
+  if (recent.length) {
+    recent.forEach(a => recentShelf.appendChild(makeRecentCard(a)));
+    document.getElementById('recentSection').style.display = 'block';
+  } else {
+    document.getElementById('recentSection').style.display = 'none';
+  }
+
+  const allShelf = document.getElementById('allShelf');
+  allShelf.innerHTML = '';
+  byRating.forEach(a => allShelf.appendChild(makeAlbumCard(a)));
+
+  // Show UI immediately, then fetch art and update cards as images arrive
+  document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('reloadBtn').style.display = 'block';
+
+  // Fetch art for all albums and update covers progressively
+  byRating.forEach(async (a) => {
+    const artUrl = await fetchArt(a.artist, a.title);
+    if (!artUrl) return;
+    a.art = artUrl;
+    // Update all cards with this album's art (top shelf + all shelf + recent)
+    document.querySelectorAll(`[data-album-key="${CSS.escape(a.title + '::' + a.artist)}"]`).forEach(coverEl => {
+      coverEl.innerHTML = `<img src="${artUrl}" alt="${a.title} cover" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+    });
+  });
+
+  renderStats();
+}
+
+// Auto-load if SHEET_URL is set (for the hosted/live version)
+window.addEventListener('DOMContentLoaded', () => {
+  if (SHEET_URL) {
+    document.getElementById('csvUrl').value = SHEET_URL;
+    loadFromUrl();
+  }
+});
+</script>
+</body>
+</html>
