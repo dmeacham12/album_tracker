@@ -304,38 +304,56 @@ function renderSortedShelf(containerId, mode) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  // Group albums by year
-  const groups = {};
-  albums.forEach(a => {
-    let yr = null;
-    if (mode === 'release') {
-      yr = extractYear(a.releaseDate) || 'Unknown';
-    } else {
+  if (mode === 'release') {
+    // Group by decade/year — most recent first, Unknown last
+    const groups = {};
+    albums.forEach(a => {
+      const yr = extractYear(a.releaseDate) || 'Unknown';
+      if (!groups[yr]) groups[yr] = [];
+      groups[yr].push(a);
+    });
+    const years = Object.keys(groups).sort((a,b) => {
+      if (a === 'Unknown') return 1;
+      if (b === 'Unknown') return -1;
+      return b - a;
+    });
+    years.forEach(yr => groups[yr].sort((a,b) => b.rating - a.rating));
+    container.innerHTML = years.map(yr => `
+      <div style="margin-bottom:2rem;">
+        <p class="section-label" style="margin-bottom:12px;">${yr}</p>
+        <div class="top-shelf">${groups[yr].map(a => makeAlbumCard(a).outerHTML).join('')}</div>
+      </div>`).join('');
+
+  } else {
+    // Listen date — sort all albums by date listened, most recent first
+    // Albums with no listen date go at the bottom
+    const withDate = albums.filter(a => parseDate(a.dateListened))
+      .sort((a,b) => parseDate(b.dateListened) - parseDate(a.dateListened));
+    const noDate = albums.filter(a => !parseDate(a.dateListened));
+
+    // Group by month/year for readability
+    const groups = {};
+    withDate.forEach(a => {
       const d = parseDate(a.dateListened);
-      yr = d ? d.getFullYear() : 'Unknown';
-    }
-    if (!groups[yr]) groups[yr] = [];
-    groups[yr].push(a);
-  });
+      const key = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(a);
+    });
 
-  // Sort years descending, Unknown last
-  const years = Object.keys(groups).sort((a,b) => {
-    if (a === 'Unknown') return 1;
-    if (b === 'Unknown') return -1;
-    return b - a;
-  });
+    const sections = Object.keys(groups).map(key => `
+      <div style="margin-bottom:2rem;">
+        <p class="section-label" style="margin-bottom:12px;">${key}</p>
+        <div class="top-shelf">${groups[key].map(a => makeAlbumCard(a).outerHTML).join('')}</div>
+      </div>`).join('');
 
-  // Sort albums within each year by rating desc
-  years.forEach(yr => groups[yr].sort((a,b) => b.rating - a.rating));
+    const noDateSection = noDate.length ? `
+      <div style="margin-bottom:2rem;">
+        <p class="section-label" style="margin-bottom:12px;">No date</p>
+        <div class="top-shelf">${noDate.map(a => makeAlbumCard(a).outerHTML).join('')}</div>
+      </div>` : '';
 
-  container.innerHTML = years.map(yr => `
-    <div style="margin-bottom:2rem;">
-      <p class="section-label" style="margin-bottom:12px;">${yr}</p>
-      <div class="top-shelf">
-        ${groups[yr].map(a => makeAlbumCard(a).outerHTML).join('')}
-      </div>
-    </div>
-  `).join('');
+    container.innerHTML = sections + noDateSection;
+  }
 }
 
 // ── Pre-baked sheet URL — visitors see your data automatically ──
@@ -682,7 +700,8 @@ async function processCSV(text) {
   document.getElementById('reloadBtn').style.display = 'block';
 
   // Fetch art, release year, and genre progressively for all albums
-  byRating.forEach(async (a) => {
+  // Use Promise.all so we can re-render stats once everything has settled
+  Promise.all(byRating.map(async (a) => {
     const info = await fetchAlbumInfo(a.artist, a.title);
 
     // Art
@@ -702,6 +721,9 @@ async function processCSV(text) {
     if (info.genre && !a.genre) {
       a.genre = info.genre;
     }
+  })).then(() => {
+    // Re-render stats now that release dates and genres are populated
+    renderStats();
   });
 
   renderStats();
