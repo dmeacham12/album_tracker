@@ -248,6 +248,8 @@
     <div class="tabs">
       <button class="tab active" onclick="switchTab('stats', this)">Stats</button>
       <button class="tab" onclick="switchTab('all', this)">All Albums</button>
+      <button class="tab" onclick="switchTab('byrelease', this)">By Release Date</button>
+      <button class="tab" onclick="switchTab('bylistened', this)">By Listen Date</button>
     </div>
 
     <div id="panel-stats" class="panel active">
@@ -264,6 +266,14 @@
 
     <div id="panel-all" class="panel">
       <div class="top-shelf" id="allShelf"></div>
+    </div>
+
+    <div id="panel-byrelease" class="panel">
+      <div id="releaseShelf"></div>
+    </div>
+
+    <div id="panel-bylistened" class="panel">
+      <div id="listenedShelf"></div>
     </div>
   </div>
 
@@ -285,12 +295,53 @@ function switchTab(tab, el) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('panel-' + tab).classList.add('active');
+
+  if (tab === 'byrelease') renderSortedShelf('releaseShelf', 'release');
+  if (tab === 'bylistened') renderSortedShelf('listenedShelf', 'listened');
+}
+
+function renderSortedShelf(containerId, mode) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  // Group albums by year
+  const groups = {};
+  albums.forEach(a => {
+    let yr = null;
+    if (mode === 'release') {
+      yr = extractYear(a.releaseDate) || 'Unknown';
+    } else {
+      const d = parseDate(a.dateListened);
+      yr = d ? d.getFullYear() : 'Unknown';
+    }
+    if (!groups[yr]) groups[yr] = [];
+    groups[yr].push(a);
+  });
+
+  // Sort years descending, Unknown last
+  const years = Object.keys(groups).sort((a,b) => {
+    if (a === 'Unknown') return 1;
+    if (b === 'Unknown') return -1;
+    return b - a;
+  });
+
+  // Sort albums within each year by rating desc
+  years.forEach(yr => groups[yr].sort((a,b) => b.rating - a.rating));
+
+  container.innerHTML = years.map(yr => `
+    <div style="margin-bottom:2rem;">
+      <p class="section-label" style="margin-bottom:12px;">${yr}</p>
+      <div class="top-shelf">
+        ${groups[yr].map(a => makeAlbumCard(a).outerHTML).join('')}
+      </div>
+    </div>
+  `).join('');
 }
 
 // ── Pre-baked sheet URL — visitors see your data automatically ──
 // Set this to your published Google Sheets CSV URL to auto-load on page open.
 // Leave empty ('') to show the input screen instead.
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdLG7svNSJqXZZ5DsQM9mhUmC4hTXCCNCQcHtfaAmqmJV_hJFSkQ5QvWj7h0PcsNgJdPswb4IQCgae/pub?output=csv';
+const SHEET_URL = '';
 
 function resetToUpload() {
   document.getElementById('mainContent').style.display = 'none';
@@ -384,36 +435,58 @@ function normalize(row) {
   };
 }
 
-async function fetchArt(artist, title) {
+// Fetches art, release year, and top genre from Last.fm in a single call
+async function fetchAlbumInfo(artist, title) {
   const LASTFM_KEY = 'b25b959554ed76058ac220b7b2e0a026';
+  const result = { art: null, releaseYear: null, genre: null };
   try {
     const url = `https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LASTFM_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`;
     const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.album && data.album.image) {
-      const images = data.album.image;
-      // Last.fm returns sizes: small, medium, large, extralarge, mega
-      const mega = images.find(i => i.size === 'mega') || images.find(i => i.size === 'extralarge') || images[images.length - 1];
-      const imgUrl = mega && mega['#text'];
-      if (imgUrl && imgUrl.length > 0) return imgUrl;
+    if (res.ok) {
+      const data = await res.json();
+      if (data.album) {
+        // Art
+        const images = data.album.image || [];
+        const mega = images.find(i => i.size === 'mega') || images.find(i => i.size === 'extralarge') || images[images.length - 1];
+        const imgUrl = mega && mega['#text'];
+        if (imgUrl && imgUrl.length > 0) result.art = imgUrl;
+
+        // Release year — buried in wiki summary or tracks
+        if (data.album.wiki && data.album.wiki.published) {
+          const yr = data.album.wiki.published.match(/(19|20)\d{2}/);
+          if (yr) result.releaseYear = yr[0];
+        }
+
+        // Top genre tag (skip generic ones)
+        const skipTags = new Set(['seen live','albums i own','spotify','favourite albums','love']);
+        const tags = (data.album.tags && data.album.tags.tag) || [];
+        const topTag = tags.find(t => !skipTags.has(t.name.toLowerCase()));
+        if (topTag) result.genre = topTag.name;
+      }
     }
   } catch(e) { console.warn('Last.fm fetch failed:', artist, title, e); }
 
-  // Fallback: iTunes (works on some networks)
-  try {
-    const q = encodeURIComponent(artist + ' ' + title);
-    const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=3`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.results && data.results.length > 0) {
-        const imgUrl = data.results[0].artworkUrl100;
-        if (imgUrl) return imgUrl.replace('100x100bb', '600x600bb');
+  // Fallback: iTunes for art only
+  if (!result.art) {
+    try {
+      const q = encodeURIComponent(artist + ' ' + title);
+      const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=3`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          const imgUrl = data.results[0].artworkUrl100;
+          if (imgUrl) result.art = imgUrl.replace('100x100bb', '600x600bb');
+          // iTunes also has release date
+          if (!result.releaseYear && data.results[0].releaseDate) {
+            const yr = data.results[0].releaseDate.match(/(19|20)\d{2}/);
+            if (yr) result.releaseYear = yr[0];
+          }
+        }
       }
-    }
-  } catch(e) { console.warn('iTunes fallback failed:', artist, title, e); }
+    } catch(e) { console.warn('iTunes fallback failed:', artist, title, e); }
+  }
 
-  return null;
+  return result;
 }
 
 function initials(title) {
@@ -608,15 +681,27 @@ async function processCSV(text) {
   document.getElementById('mainContent').style.display = 'block';
   document.getElementById('reloadBtn').style.display = 'block';
 
-  // Fetch art for all albums and update covers progressively
+  // Fetch art, release year, and genre progressively for all albums
   byRating.forEach(async (a) => {
-    const artUrl = await fetchArt(a.artist, a.title);
-    if (!artUrl) return;
-    a.art = artUrl;
-    // Update all cards with this album's art (top shelf + all shelf + recent)
-    document.querySelectorAll(`[data-album-key="${CSS.escape(a.title + '::' + a.artist)}"]`).forEach(coverEl => {
-      coverEl.innerHTML = `<img src="${artUrl}" alt="${a.title} cover" style="width:100%;height:100%;object-fit:cover;display:block;">`;
-    });
+    const info = await fetchAlbumInfo(a.artist, a.title);
+
+    // Art
+    if (info.art) {
+      a.art = info.art;
+      document.querySelectorAll(`[data-album-key="${CSS.escape(a.title + '::' + a.artist)}"]`).forEach(coverEl => {
+        coverEl.innerHTML = `<img src="${info.art}" alt="${a.title} cover" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+      });
+    }
+
+    // Release year — only fill if blank in sheet
+    if (info.releaseYear && !a.releaseDate) {
+      a.releaseDate = info.releaseYear;
+    }
+
+    // Genre — only fill if blank in sheet
+    if (info.genre && !a.genre) {
+      a.genre = info.genre;
+    }
   });
 
   renderStats();
