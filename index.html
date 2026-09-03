@@ -359,7 +359,7 @@ function renderSortedShelf(containerId, mode) {
 // ── Pre-baked sheet URL — visitors see your data automatically ──
 // Set this to your published Google Sheets CSV URL to auto-load on page open.
 // Leave empty ('') to show the input screen instead.
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdLG7svNSJqXZZ5DsQM9mhUmC4hTXCCNCQcHtfaAmqmJV_hJFSkQ5QvWj7h0PcsNgJdPswb4IQCgae/pub?output=csv';
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdLG7svNSJqXZZ5DsQM9mhUmC4hTXCCNCQcHtfaAmqmJV_hJFSkQ5QvWj7h0PcsNgJdPswb4IQCgae/pub?output=csv'; // Note: sheet must be published via File → Share → Publish to web
 
 function resetToUpload() {
   document.getElementById('mainContent').style.display = 'none';
@@ -729,12 +729,16 @@ async function processCSV(text) {
   renderStats();
 }
 
-// Auto-load if SHEET_URL is set (for the hosted/live version)
+// Auto-load on page open — skip input screen entirely
 window.addEventListener('DOMContentLoaded', () => {
-  if (SHEET_URL) {
-    document.getElementById('csvUrl').value = SHEET_URL;
-    loadFromUrl();
-  }
+  // Hide upload screen immediately
+  document.getElementById('uploadScreen').style.display = 'none';
+  // Show a loading indicator
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('emptyState').innerHTML = '<div style="text-align:center;padding:4rem 1rem;color:var(--text2);font-size:14px;">Loading your albums…</div>';
+  // Load from baked-in URL
+  document.getElementById('csvUrl').value = SHEET_URL;
+  loadFromUrl();
 });
 </script>
 </body>
