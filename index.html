@@ -74,6 +74,9 @@
   .chartboard { border-top: 1px solid var(--ruled); margin-bottom: 2.5rem; }
   .row { display: grid; grid-template-columns: 44px 46px 1fr 60px 54px; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); }
   .rank { font-family: var(--font-mono); font-weight: 500; font-size: 13px; color: var(--text3); }
+  .date-stack { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.1; }
+  .date-stack .mon { font-size: 9px; letter-spacing: 0.04em; color: var(--text3); }
+  .date-stack .day { font-size: 14px; font-weight: 600; color: var(--text2); }
   .cov { width: 46px; height: 46px; background: var(--paper-sunk); box-shadow: 0 0 0 1px var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--text3); flex-shrink: 0; overflow: hidden; }
   .cov img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .ti { min-width: 0; }
@@ -252,11 +255,11 @@
   <!-- Main content (hidden until CSV loaded) -->
   <div id="mainContent" style="display:none;">
     <div id="recentSection" style="margin-bottom:2.5rem;">
-      <div class="section-head"><span class="n">01</span><h2>Listened this week</h2></div>
+      <div class="section-head"><h2>Listened this week</h2></div>
       <div class="chartboard" id="recentShelf"></div>
     </div>
 
-    <div class="section-head"><span class="n">02</span><h2>Top rated</h2></div>
+    <div class="section-head"><h2>Top rated</h2></div>
     <div class="chartboard" id="topShelf"></div>
 
     <div class="tabs">
@@ -635,17 +638,19 @@ function makeAlbumTile(a) {
     <div class="tile-body">
       <p class="tile-title" title="${escapeHtml(a.title)}">${escapeHtml(a.title)}</p>
       <p class="tile-artist">${escapeHtml(a.artist)}</p>
-      ${a.favTracks ? `<p class="tile-tracks" title="${escapeHtml(a.favTracks)}">♪ ${escapeHtml(a.favTracks)}</p>` : ''}
+      <p class="tile-tracks"${a.favTracks ? ` title="${escapeHtml(a.favTracks)}"` : ''}>${a.favTracks ? '♪ ' + escapeHtml(a.favTracks) : ' '}</p>
     </div>`;
   return tile;
 }
 
-function makeChartRow(a, leading, showYear) {
+// leadingHtml is trusted, pre-built markup (a plain rank number or formatStackedDate's
+// output) — not raw user data, so it's inserted as-is rather than escaped.
+function makeChartRow(a, leadingHtml, showYear) {
   const row = document.createElement('div');
   row.className = 'row';
   const yr = showYear ? (extractYear(a.releaseDate) || '') : '';
   row.innerHTML = `
-    <span class="rank">${escapeHtml(leading)}</span>
+    <span class="rank">${leadingHtml}</span>
     <div class="cov" data-album-key="${escapeHtml(albumKey(a))}">${coverInnerHTML(a)}</div>
     <div class="ti">
       <p class="title" title="${escapeHtml(a.title)}">${escapeHtml(a.title)}</p>
@@ -667,8 +672,12 @@ function parseDate(str) {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function formatShortDate(d) {
-  return (d.getMonth()+1).toString().padStart(2,'0') + '/' + d.getDate().toString().padStart(2,'0');
+// Stacked month/day (e.g. "SEP" over "02") — reads better than "09/02" in the
+// narrow leading column, especially on mobile.
+function formatStackedDate(d) {
+  const mon = escapeHtml(d.toLocaleString('default', { month: 'short' }).toUpperCase());
+  const day = d.getDate().toString().padStart(2,'0');
+  return `<span class="date-stack"><span class="mon">${mon}</span><span class="day">${day}</span></span>`;
 }
 
 function renderBarChart(id, data, maxVal, colorFn) {
@@ -783,7 +792,7 @@ async function processCSV(text) {
   const recentShelf = document.getElementById('recentShelf');
   recentShelf.innerHTML = '';
   if (recent.length) {
-    recent.forEach(a => recentShelf.appendChild(makeChartRow(a, formatShortDate(parseDate(a.dateListened)), true)));
+    recent.forEach(a => recentShelf.appendChild(makeChartRow(a, formatStackedDate(parseDate(a.dateListened)), true)));
     document.getElementById('recentSection').style.display = 'block';
   } else {
     document.getElementById('recentSection').style.display = 'none';
