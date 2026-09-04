@@ -479,10 +479,51 @@ function normalize(row) {
   };
 }
 
-// Fetches art, release year, and top genre from Last.fm in a single call
+// MusicBrainz calls are queued and spaced ~1.1s apart to respect its ~1 req/sec rate limit
+let mbChain = Promise.resolve();
+function mbFetch(url) {
+  const call = mbChain.then(() => fetch(url, { headers: { 'Accept': 'application/json' } }));
+  mbChain = call.then(() => new Promise(r => setTimeout(r, 1100)), () => new Promise(r => setTimeout(r, 1100)));
+  return call;
+}
+
+// MusicBrainz is the authoritative source for original release date and genre —
+// Last.fm's date comes from free-text wiki prose and its tags are unmoderated folksonomy.
+async function fetchFromMusicBrainz(artist, title) {
+  const result = { releaseYear: null, genre: null };
+  try {
+    const q = `releasegroup:"${title.replace(/"/g, '')}" AND artist:"${artist.replace(/"/g, '')}"`;
+    const res = await mbFetch(`https://musicbrainz.org/ws/2/release-group/?query=${encodeURIComponent(q)}&fmt=json&limit=1`);
+    if (res.ok) {
+      const data = await res.json();
+      const rg = data['release-groups'] && data['release-groups'][0];
+      if (rg && rg.score >= 90) {
+        if (rg['first-release-date']) {
+          const yr = rg['first-release-date'].match(/^\d{4}/);
+          if (yr) result.releaseYear = yr[0];
+        }
+        const res2 = await mbFetch(`https://musicbrainz.org/ws/2/release-group/${rg.id}?inc=genres&fmt=json`);
+        if (res2.ok) {
+          const detail = await res2.json();
+          const genres = (detail.genres || []).slice().sort((a,b) => b.count - a.count);
+          if (genres.length) result.genre = genres[0].name;
+        }
+      }
+    }
+  } catch(e) { console.warn('MusicBrainz fetch failed:', artist, title, e); }
+  return result;
+}
+
+// Fetches art, release year, and top genre — MusicBrainz first (most trustworthy for
+// date/genre), then Last.fm and iTunes fill in art and anything MusicBrainz missed.
 async function fetchAlbumInfo(artist, title) {
   const LASTFM_KEY = 'b25b959554ed76058ac220b7b2e0a026';
   const result = { art: null, releaseYear: null, genre: null };
+
+  const mb = await fetchFromMusicBrainz(artist, title);
+  result.releaseYear = mb.releaseYear;
+  result.genre = mb.genre;
+
   try {
     const url = `https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LASTFM_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`;
     const res = await fetch(url);
@@ -495,22 +536,24 @@ async function fetchAlbumInfo(artist, title) {
         const imgUrl = mega && mega['#text'];
         if (imgUrl && imgUrl.length > 0) result.art = imgUrl;
 
-        // Release year — buried in wiki summary or tracks
-        if (data.album.wiki && data.album.wiki.published) {
+        // Release year fallback only — buried in wiki summary, less reliable than MusicBrainz
+        if (!result.releaseYear && data.album.wiki && data.album.wiki.published) {
           const yr = data.album.wiki.published.match(/(19|20)\d{2}/);
           if (yr) result.releaseYear = yr[0];
         }
 
-        // Top genre tag (skip generic ones)
-        const skipTags = new Set(['seen live','albums i own','spotify','favourite albums','love']);
-        const tags = (data.album.tags && data.album.tags.tag) || [];
-        const topTag = tags.find(t => !skipTags.has(t.name.toLowerCase()));
-        if (topTag) result.genre = topTag.name;
+        // Genre fallback only — unmoderated user tags, less reliable than MusicBrainz
+        if (!result.genre) {
+          const skipTags = new Set(['seen live','albums i own','spotify','favourite albums','love']);
+          const tags = (data.album.tags && data.album.tags.tag) || [];
+          const topTag = tags.find(t => !skipTags.has(t.name.toLowerCase()));
+          if (topTag) result.genre = topTag.name;
+        }
       }
     }
   } catch(e) { console.warn('Last.fm fetch failed:', artist, title, e); }
 
-  // Fallback: iTunes for art AND release year (more reliable than Last.fm wiki)
+  // Fallback: iTunes for art AND release year (only if still missing)
   if (!result.art || !result.releaseYear) {
     try {
       const q = encodeURIComponent(artist + ' ' + title);
