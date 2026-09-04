@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Album Tracker</title>
-<link rel="preconnect" href="https://fonts.apis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.apis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -215,11 +215,11 @@
       <div class="mode-card primary">
         <div>
           <p class="mode-badge">Live &amp; auto-updating</p>
-          <p class="mode-title"> Sheet URL</p>
+          <p class="mode-title">Google Sheet URL</p>
         </div>
         <p class="mode-desc">Paste your published CSV link and this page fetches your latest data every time it loads — perfect for sharing. Works when hosted online (GitHub Pages, Netlify, etc.)</p>
         <div class="url-input-row">
-          <input type="text" id="csvUrl" placeholder="https://docs..com/…/pub?output=csv" />
+          <input type="text" id="csvUrl" placeholder="https://docs.google.com/…/pub?output=csv" />
           <button class="btn-flag" id="loadUrlBtn" onclick="loadFromUrl()">Load</button>
         </div>
       </div>
@@ -240,9 +240,9 @@
     </div>
 
     <div class="howto">
-      <p class="howto-label">How to get your CSV from  Sheets</p>
+      <p class="howto-label">How to get your CSV from Google Sheets</p>
       <div class="howto-steps">
-        <div><span class="n">01 &nbsp;</span>Open your  Sheet → <strong>File → Share → Publish to web</strong></div>
+        <div><span class="n">01 &nbsp;</span>Open your Google Sheet → <strong>File → Share → Publish to web</strong></div>
         <div><span class="n">02 &nbsp;</span>Select your sheet tab and choose <strong>Comma-separated values (.csv)</strong></div>
         <div><span class="n">03 &nbsp;</span>Click <strong>Publish</strong> — copy the URL for live mode, or click it to download for file upload</div>
       </div>
@@ -382,7 +382,7 @@ function renderSortedShelf(containerId, mode) {
 }
 
 // ── Pre-baked sheet URL — visitors see your data automatically ──
-// Set this to your published  Sheets CSV URL to auto-load on page open.
+// Set this to your published Google Sheets CSV URL to auto-load on page open.
 // Leave empty ('') to show the input screen instead.
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSp3fA94KoiKePOhU1f_44EWyqzWDuQmZRmaVb2KOtMLxQn0S3cLl6MzMZeInyIVMcO1MzNO1c9i-uO/pub?output=csv';
 
@@ -397,17 +397,17 @@ function resetToUpload() {
 
 async function loadFromUrl() {
   let url = (document.getElementById('csvUrl').value || '').trim();
-  if (!url) { showToast('Paste your  Sheet CSV URL first.'); return; }
+  if (!url) { showToast('Paste your Google Sheet CSV URL first.'); return; }
 
   // Auto-fix URL formats
   const pubMatch = url.match(/\/spreadsheets\/d\/e\/([a-zA-Z0-9_-]+)/);
   const editMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
   if (pubMatch && !url.includes('output=csv')) {
     const gid = (url.match(/[?&]gid=(\d+)/) || [])[1] || '0';
-    url = `https://docs..com/spreadsheets/d/e/${pubMatch[1]}/pub?output=csv&gid=${gid}`;
+    url = `https://docs.google.com/spreadsheets/d/e/${pubMatch[1]}/pub?output=csv&gid=${gid}`;
   } else if (editMatch && !url.includes('output=csv')) {
     const gid = (url.match(/[?&]gid=(\d+)/) || [])[1] || '0';
-    url = `https://docs..com/spreadsheets/d/${editMatch[1]}/export?format=csv&gid=${gid}`;
+    url = `https://docs.google.com/spreadsheets/d/${editMatch[1]}/export?format=csv&gid=${gid}`;
   }
 
   const btn = document.getElementById('loadUrlBtn');
