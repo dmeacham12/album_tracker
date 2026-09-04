@@ -479,12 +479,23 @@ function normalize(row) {
   };
 }
 
-// MusicBrainz calls are queued and spaced ~1.1s apart to respect its ~1 req/sec rate limit
+// MusicBrainz calls are queued and spaced ~1.5s apart to respect its ~1 req/sec rate limit.
+// It still returns 503 ("slow down") under load, so a 503 gets retried with backoff
+// rather than being treated as "no match found".
+const MB_SPACING_MS = 1500;
 let mbChain = Promise.resolve();
-function mbFetch(url) {
+function mbFetchRaw(url) {
   const call = mbChain.then(() => fetch(url, { headers: { 'Accept': 'application/json' } }));
-  mbChain = call.then(() => new Promise(r => setTimeout(r, 1100)), () => new Promise(r => setTimeout(r, 1100)));
+  mbChain = call.then(() => new Promise(r => setTimeout(r, MB_SPACING_MS)), () => new Promise(r => setTimeout(r, MB_SPACING_MS)));
   return call;
+}
+async function mbFetch(url, attempt = 0) {
+  const res = await mbFetchRaw(url);
+  if (res.status === 503 && attempt < 3) {
+    await new Promise(r => setTimeout(r, MB_SPACING_MS * (attempt + 1)));
+    return mbFetch(url, attempt + 1);
+  }
+  return res;
 }
 
 // MusicBrainz is the authoritative source for original release date and genre —
@@ -514,16 +525,11 @@ async function fetchFromMusicBrainz(artist, title) {
   return result;
 }
 
-// Fetches art, release year, and top genre — MusicBrainz first (most trustworthy for
-// date/genre), then Last.fm and iTunes fill in art and anything MusicBrainz missed.
-async function fetchAlbumInfo(artist, title) {
+// Last.fm: art, plus release year / genre as a fallback only (its date comes from
+// free-text wiki prose and its tags are unmoderated folksonomy — MusicBrainz wins ties).
+async function fetchFromLastfm(artist, title) {
   const LASTFM_KEY = 'b25b959554ed76058ac220b7b2e0a026';
   const result = { art: null, releaseYear: null, genre: null };
-
-  const mb = await fetchFromMusicBrainz(artist, title);
-  result.releaseYear = mb.releaseYear;
-  result.genre = mb.genre;
-
   try {
     const url = `https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LASTFM_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`;
     const res = await fetch(url);
@@ -536,22 +542,37 @@ async function fetchAlbumInfo(artist, title) {
         const imgUrl = mega && mega['#text'];
         if (imgUrl && imgUrl.length > 0) result.art = imgUrl;
 
-        // Release year fallback only — buried in wiki summary, less reliable than MusicBrainz
-        if (!result.releaseYear && data.album.wiki && data.album.wiki.published) {
+        // Release year — buried in wiki summary or tracks
+        if (data.album.wiki && data.album.wiki.published) {
           const yr = data.album.wiki.published.match(/(19|20)\d{2}/);
           if (yr) result.releaseYear = yr[0];
         }
 
-        // Genre fallback only — unmoderated user tags, less reliable than MusicBrainz
-        if (!result.genre) {
-          const skipTags = new Set(['seen live','albums i own','spotify','favourite albums','love']);
-          const tags = (data.album.tags && data.album.tags.tag) || [];
-          const topTag = tags.find(t => !skipTags.has(t.name.toLowerCase()));
-          if (topTag) result.genre = topTag.name;
-        }
+        // Top genre tag (skip generic ones)
+        const skipTags = new Set(['seen live','albums i own','spotify','favourite albums','love']);
+        const tags = (data.album.tags && data.album.tags.tag) || [];
+        const topTag = tags.find(t => !skipTags.has(t.name.toLowerCase()));
+        if (topTag) result.genre = topTag.name;
       }
     }
   } catch(e) { console.warn('Last.fm fetch failed:', artist, title, e); }
+  return result;
+}
+
+// Fetches art, release year, and top genre. MusicBrainz (rate-limited, so queued
+// separately) and Last.fm run concurrently so the throttled MusicBrainz lookups never
+// delay art from showing up. MusicBrainz wins for release year/genre when it has an answer.
+async function fetchAlbumInfo(artist, title) {
+  const result = { art: null, releaseYear: null, genre: null };
+
+  const [mb, lastfm] = await Promise.all([
+    fetchFromMusicBrainz(artist, title),
+    fetchFromLastfm(artist, title)
+  ]);
+
+  result.art = lastfm.art;
+  result.releaseYear = mb.releaseYear || lastfm.releaseYear;
+  result.genre = mb.genre || lastfm.genre;
 
   // Fallback: iTunes for art AND release year (only if still missing)
   if (!result.art || !result.releaseYear) {
@@ -777,8 +798,13 @@ async function processCSV(text) {
       a.genre = info.genre;
     }
   })).then(() => {
-    // Re-render stats now that release dates and genres are populated
+    // Re-render stats, and whichever sorted shelf is currently open, now that
+    // release dates and genres have finished populating (MusicBrainz is rate-limited,
+    // so this can take a while — refresh instead of leaving the tab stuck on "Unknown").
     renderStats();
+    const active = document.querySelector('.panel.active');
+    if (active && active.id === 'panel-byrelease') renderSortedShelf('releaseShelf', 'release');
+    if (active && active.id === 'panel-bylistened') renderSortedShelf('listenedShelf', 'listened');
   });
 
   renderStats();
