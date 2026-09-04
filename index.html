@@ -5,181 +5,194 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Album Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0f0f0f;
-    --surface: #1a1a1a;
-    --surface2: #242424;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(255,255,255,0.15);
-    --text: #f0ebe1;
-    --text2: #9a9490;
-    --text3: #5a5652;
-    --gold: #c9a84c;
-    --green: #27a868;
-    --red: #c0392b;
-    --font-display: 'DM Serif Display', Georgia, serif;
-    --font-body: 'Inter', system-ui, sans-serif;
-    --radius: 12px;
-    --radius-sm: 8px;
+    --bg: #EDEEE9;
+    --paper: #FBFBF8;
+    --paper-sunk: #E3E4DE;
+    --ruled: #101314;
+    --line: rgba(16,19,20,0.14);
+    --line2: rgba(16,19,20,0.28);
+    --text: #101314;
+    --text2: #565F66;
+    --text3: #8B928F;
+    --flag: #D8491F;
+    --chart-blue: #1D5FA6;
+    --good: #2E7D4F;
+    --mid: #B8860B;
+    --low: #B8402E;
+    --font-display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101314;
+      --paper: #171B1C;
+      --paper-sunk: #0C0F10;
+      --ruled: #EDEEE9;
+      --line: rgba(237,238,233,0.14);
+      --line2: rgba(237,238,233,0.28);
+      --text: #EDEEE9;
+      --text2: #9AA3A0;
+      --text3: #656F6C;
+      --flag: #F0703E;
+      --chart-blue: #5B9BDA;
+      --good: #5FBE84;
+      --mid: #E0B23D;
+      --low: #E0705C;
+    }
   }
 
-  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; min-height: 100vh; }
-  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; min-height: 100vh; font-variant-numeric: tabular-nums; }
+  .container { max-width: 920px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 
-  header { margin-bottom: 2.5rem; }
-  .header-inner { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
-  h1 { font-family: var(--font-display); font-size: 32px; font-weight: 400; letter-spacing: -0.5px; display: flex; align-items: center; gap: 12px; }
+  header { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 3px solid var(--ruled); padding-bottom: 10px; margin-bottom: 2rem; flex-wrap: wrap; gap: 12px; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 34px; text-transform: uppercase; letter-spacing: 0.01em; line-height: 0.9; }
+  .header-right { display: flex; align-items: center; gap: 14px; }
 
+  .tally { font-family: var(--font-mono); font-size: 11px; color: var(--text2); text-align: right; display: none; }
+  .tally b { color: var(--flag); font-weight: 500; }
 
-  /* Re-upload button (shown when data is loaded) */
   .reload-btn {
-    background: none; border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
-    color: var(--text2); font-family: var(--font-body); font-size: 12px;
-    padding: 6px 14px; cursor: pointer; transition: border-color 0.15s, color 0.15s;
+    background: none; border: 1px solid var(--line2); border-radius: 3px;
+    color: var(--text2); font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 6px 12px; cursor: pointer; transition: border-color 0.15s, color 0.15s;
   }
-  .reload-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .reload-btn:hover { border-color: var(--flag); color: var(--flag); }
 
-  .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 14px; }
+  .section-head { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+  .section-head .n { font-family: var(--font-mono); font-size: 11px; color: var(--flag); font-weight: 500; }
+  .section-head h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--text2); }
+  .section-label { font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); margin-bottom: 12px; }
 
-  /* Recent shelf */
-  .recent-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 3rem; }
-  .recent-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); display: flex; gap: 12px; padding: 12px; align-items: flex-start; transition: border-color 0.15s; }
-  .recent-card:hover { border-color: var(--border2); }
-  .recent-cover { width: 56px; height: 56px; flex-shrink: 0; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface2); }
-  .recent-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .recent-cover-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 18px; color: var(--text3); }
-  .recent-info { min-width: 0; }
-  .recent-title { font-family: var(--font-display); font-size: 14px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .recent-artist { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  .recent-date { font-size: 11px; color: var(--text3); margin-top: 2px; }
-  .recent-stars { font-size: 11px; color: var(--gold); margin-top: 4px; }
+  /* Chart rows (Listened This Week / Top Rated) */
+  .chartboard { border-top: 1px solid var(--ruled); margin-bottom: 2.5rem; }
+  .row { display: grid; grid-template-columns: 44px 46px 1fr 60px 54px; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .rank { font-family: var(--font-mono); font-weight: 500; font-size: 13px; color: var(--text3); }
+  .cov { width: 46px; height: 46px; background: var(--paper-sunk); box-shadow: 0 0 0 1px var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--text3); flex-shrink: 0; overflow: hidden; }
+  .cov img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ti { min-width: 0; }
+  .ti .title { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ti .artist { font-size: 12px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ti .tracks { font-size: 11px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .yr { font-family: var(--font-mono); font-size: 12px; color: var(--text2); text-align: right; }
+  .sc { font-family: var(--font-mono); font-weight: 500; font-size: 14px; text-align: right; }
 
-  /* Top shelf */
-  .top-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; margin-bottom: 3rem; }
-  .album-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color 0.15s, transform 0.15s; }
-  .album-card:hover { border-color: var(--border2); transform: translateY(-2px); }
-  .cover { width: 100%; aspect-ratio: 1; background: var(--surface2); position: relative; overflow: hidden; }
-  .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .cover-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 32px; color: var(--text3); }
-  .rating-badge { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.75); font-size: 12px; font-weight: 600; padding: 3px 7px; border-radius: 20px; }
-  .card-body { padding: 10px 12px 14px; }
-  .album-title { font-family: var(--font-display); font-size: 14px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .album-artist { font-size: 11px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .album-stars { font-size: 12px; color: var(--gold); margin-top: 5px; }
-  .album-tracks { font-size: 11px; color: var(--text3); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Album tile grid (All Albums / By Release / By Listen) */
+  .tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-bottom: 2.5rem; }
+  .tile { background: var(--paper); box-shadow: 0 0 0 1px var(--line); }
+  .tile-cov { width: 100%; aspect-ratio: 1; background: var(--paper-sunk); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 30px; color: var(--text3); }
+  .tile-cov img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tile-badge { position: absolute; top: 6px; right: 6px; background: var(--paper); font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 3px 7px; box-shadow: 0 0 0 1px var(--line); }
+  .tile-body { padding: 9px 11px 12px; }
+  .tile-title { font-weight: 600; font-size: 13.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile-artist { font-size: 11.5px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile-tracks { font-family: var(--font-mono); font-size: 10.5px; color: var(--text3); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* Tabs */
-  .tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 2rem; }
-  .tab { font-family: var(--font-body); font-size: 13px; font-weight: 500; padding: 10px 20px; cursor: pointer; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); transition: color 0.15s, border-color 0.15s; }
+  .tabs { display: flex; border-bottom: 1px solid var(--line2); margin-bottom: 1.75rem; overflow-x: auto; }
+  .tab { font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; padding: 9px 16px 11px; cursor: pointer; background: none; border: none; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; transition: color 0.15s, border-color 0.15s; }
   .tab:hover { color: var(--text); }
-  .tab.active { color: var(--text); border-bottom-color: var(--gold); }
+  .tab.active { color: var(--text); border-bottom-color: var(--flag); }
   .panel { display: none; }
   .panel.active { display: block; }
 
   /* Metrics */
-  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 2rem; }
-  .metric { background: var(--surface); border-radius: var(--radius-sm); padding: 16px; }
-  .metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
-  .metric-value { font-family: var(--font-display); font-size: 26px; line-height: 1; }
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--ruled); margin-bottom: 2rem; }
+  .metric { padding: 14px 16px; border-right: 1px solid var(--line); }
+  .metric:last-child { border-right: none; }
+  .metric-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text2); margin-bottom: 6px; }
+  .metric-value { font-family: var(--font-display); font-weight: 700; font-size: 27px; line-height: 1; }
 
   /* Charts */
-  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 2rem; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 2rem; }
   @media (max-width: 600px) { .charts-row { grid-template-columns: 1fr; } }
-  .chart-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
-  .chart-title { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .bar-label { font-size: 12px; color: var(--text2); width: 72px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-wrap { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-  .bar-val { font-size: 12px; color: var(--text2); min-width: 28px; text-align: right; }
+  .chart-box { background: var(--paper); padding: 1.25rem; }
+  .chart-title { font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; color: var(--text2); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .bar-row { display: grid; grid-template-columns: 62px 1fr 28px; align-items: center; gap: 10px; margin-bottom: 11px; }
+  .bar-label { font-size: 11.5px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-wrap { height: 14px; background: var(--line); position: relative; }
+  .bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--chart-blue); }
+  .bar-val { font-family: var(--font-mono); font-size: 11.5px; color: var(--text2); text-align: right; }
 
-  .no-data { font-size: 12px; color: var(--text3); padding: 8px 0; }
+  .no-data { font-family: var(--font-mono); font-size: 11.5px; color: var(--text3); padding: 8px 0; }
 
   /* Dual-mode input screen */
   .input-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
   @media (max-width: 600px) { .input-modes { grid-template-columns: 1fr; } }
 
   .mode-card {
-    background: var(--surface); border: 0.5px solid var(--border2);
-    border-radius: var(--radius); padding: 1.5rem; display: flex;
-    flex-direction: column; gap: 12px;
+    background: var(--paper); box-shadow: 0 0 0 1px var(--line);
+    padding: 1.5rem; display: flex; flex-direction: column; gap: 12px;
   }
-  .mode-card.primary { border-color: var(--gold); }
-  .mode-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
-  .mode-title { font-family: var(--font-display); font-size: 18px; font-weight: 400; }
+  .mode-card.primary { box-shadow: 0 0 0 1px var(--flag); }
+  .mode-badge { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--flag); margin-bottom: 2px; }
+  .mode-title { font-family: var(--font-display); font-weight: 700; font-size: 20px; text-transform: uppercase; }
   .mode-desc { font-size: 12px; color: var(--text2); line-height: 1.7; flex: 1; }
-  .mode-desc strong { color: var(--text); }
+  .mode-desc strong { color: var(--text); font-weight: 600; }
 
   .url-input-row { display: flex; gap: 8px; }
   .url-input-row input {
-    flex: 1; background: var(--surface2); border: 0.5px solid var(--border2);
-    border-radius: var(--radius-sm); color: var(--text); font-family: var(--font-body);
-    font-size: 12px; padding: 9px 12px; outline: none; transition: border-color 0.15s; min-width: 0;
+    flex: 1; background: var(--paper-sunk); box-shadow: 0 0 0 1px var(--line2);
+    color: var(--text); font-family: var(--font-mono);
+    font-size: 12px; padding: 9px 12px; outline: none; border: none; min-width: 0;
   }
-  .url-input-row input:focus { border-color: var(--gold); }
+  .url-input-row input:focus { box-shadow: 0 0 0 1px var(--flag); }
   .url-input-row input::placeholder { color: var(--text3); }
-  .btn-gold {
-    background: var(--gold); border: none; border-radius: var(--radius-sm);
-    color: #0f0f0f; cursor: pointer; font-family: var(--font-body); font-size: 12px;
-    font-weight: 600; padding: 9px 16px; white-space: nowrap; transition: opacity 0.15s; flex-shrink: 0;
+  .btn-flag {
+    background: var(--flag); border: none; color: #FBFBF8; cursor: pointer;
+    font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 500; padding: 9px 16px; white-space: nowrap; transition: opacity 0.15s; flex-shrink: 0;
   }
-  .btn-gold:hover { opacity: 0.85; }
-  .btn-gold:disabled { opacity: 0.45; cursor: default; }
+  .btn-flag:hover { opacity: 0.85; }
+  .btn-flag:disabled { opacity: 0.45; cursor: default; }
 
   .upload-zone {
-    border: 1.5px dashed var(--border2); border-radius: var(--radius-sm);
-    padding: 1.5rem 1rem; text-align: center; cursor: pointer;
-    transition: border-color 0.15s, background 0.15s; background: var(--surface2); position: relative;
+    border: 1.5px dashed var(--line2); padding: 1.5rem 1rem; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; background: var(--paper-sunk); position: relative;
   }
-  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--flag); }
   .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
   .upload-zone p { font-size: 12px; color: var(--text2); }
-  .upload-zone strong { color: var(--gold); }
+  .upload-zone strong { color: var(--flag); }
 
-  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 0.5px solid var(--border2); color: var(--text); font-size: 13px; padding: 10px 20px; border-radius: 20px; display: none; z-index: 99; white-space: nowrap; }
+  .howto { background: var(--paper); box-shadow: 0 0 0 1px var(--line); padding: 1.25rem 1.5rem; }
+  .howto-label { font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .howto-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 10px; }
+  .howto-steps > div { font-size: 12px; color: var(--text2); line-height: 1.7; }
+  .howto-steps .n { color: var(--flag); font-weight: 500; font-family: var(--font-mono); }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--paper); box-shadow: 0 0 0 1px var(--line2); color: var(--text); font-family: var(--font-mono); font-size: 12.5px; padding: 10px 18px; display: none; z-index: 99; white-space: nowrap; }
+
+  #loadingState { display: none; text-align: center; padding: 6rem 1rem; color: var(--text2); font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
 
   /* ── Mobile ── */
   @media (max-width: 480px) {
     .container { padding: 1.25rem 1rem 3rem; }
     h1 { font-size: 24px; }
-    .header-inner { margin-bottom: 1rem; }
 
-    /* Upload */
     .upload-zone { padding: 1.75rem 1.25rem; }
-    .upload-zone h2 { font-size: 18px; }
-    .steps { grid-template-columns: 1fr; }
 
-    /* Recent shelf — single column horizontal cards */
-    .recent-shelf { grid-template-columns: 1fr; gap: 10px; margin-bottom: 2rem; }
+    .row { grid-template-columns: 26px 40px 1fr 46px; }
+    .yr { display: none; }
 
-    /* Top shelf — 2 columns on mobile */
-    .top-shelf { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 2rem; }
-    .album-title { font-size: 13px; }
-    .card-body { padding: 8px 10px 10px; }
+    .tile-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 2rem; }
+    .tile-title { font-size: 13px; }
+    .tile-body { padding: 8px 10px 10px; }
 
-    /* Metrics — 2 columns */
-    .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .metric { padding: 12px; }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .metric { padding: 12px; border-bottom: 1px solid var(--line); }
     .metric-value { font-size: 22px; }
 
-    /* Charts — single column */
-    .charts-row { grid-template-columns: 1fr; gap: 12px; }
-    .chart-box { padding: 1rem; }
-
-    /* Bar labels wider on mobile so text fits */
-    .bar-label { width: 88px; font-size: 11px; }
+    .bar-label { font-size: 11px; }
     .bar-val { font-size: 11px; }
 
-    /* Tabs — fill width */
-    .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .tab { padding: 10px 16px; font-size: 13px; white-space: nowrap; }
-
-    /* Reload button smaller */
-    .reload-btn { font-size: 11px; padding: 5px 10px; }
+    .tab { padding: 10px 14px 11px; font-size: 11px; }
   }
 </style>
 </head>
@@ -187,9 +200,10 @@
 <div class="container">
 
   <header>
-    <div class="header-inner">
-      <h1>💿 Album Tracker</h1>
-      <button class="reload-btn" id="reloadBtn" style="display:none;" onclick="resetToUpload()">↑ Change data source</button>
+    <h1>Album Tracker</h1>
+    <div class="header-right">
+      <div class="tally" id="tally"><span id="tallyCount">0</span><b> ●</b> albums tracked</div>
+      <button class="reload-btn" id="reloadBtn" style="display:none;" onclick="resetToUpload()">Change data source</button>
     </div>
   </header>
 
@@ -200,20 +214,20 @@
       <!-- Mode A: Live URL -->
       <div class="mode-card primary">
         <div>
-          <p class="mode-badge">⚡ Live &amp; Auto-updating</p>
+          <p class="mode-badge">Live &amp; auto-updating</p>
           <p class="mode-title">Google Sheet URL</p>
         </div>
         <p class="mode-desc">Paste your published CSV link and this page fetches your latest data every time it loads — perfect for sharing. Works when hosted online (GitHub Pages, Netlify, etc.)</p>
         <div class="url-input-row">
           <input type="text" id="csvUrl" placeholder="https://docs.google.com/…/pub?output=csv" />
-          <button class="btn-gold" id="loadUrlBtn" onclick="loadFromUrl()">Load</button>
+          <button class="btn-flag" id="loadUrlBtn" onclick="loadFromUrl()">Load</button>
         </div>
       </div>
 
       <!-- Mode B: File upload -->
       <div class="mode-card">
         <div>
-          <p class="mode-badge">📂 Manual Upload</p>
+          <p class="mode-badge">Manual upload</p>
           <p class="mode-title">Upload a CSV file</p>
         </div>
         <p class="mode-desc">Download your sheet as a CSV file and upload it here. Great for local use or sharing the tracker with friends who have their own sheet.</p>
@@ -225,12 +239,12 @@
 
     </div>
 
-    <div style="background:var(--surface);border-radius:var(--radius);padding:1.25rem 1.5rem;">
-      <p style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">How to get your CSV from Google Sheets</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
-        <div style="font-size:12px;color:var(--text2);line-height:1.7;"><span style="color:var(--gold);font-weight:600;">1 &nbsp;</span>Open your Google Sheet → <strong>File → Share → Publish to web</strong></div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.7;"><span style="color:var(--gold);font-weight:600;">2 &nbsp;</span>Select your sheet tab and choose <strong>Comma-separated values (.csv)</strong></div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.7;"><span style="color:var(--gold);font-weight:600;">3 &nbsp;</span>Click <strong>Publish</strong> — copy the URL for live mode, or click it to download for file upload</div>
+    <div class="howto">
+      <p class="howto-label">How to get your CSV from Google Sheets</p>
+      <div class="howto-steps">
+        <div><span class="n">01 &nbsp;</span>Open your Google Sheet → <strong>File → Share → Publish to web</strong></div>
+        <div><span class="n">02 &nbsp;</span>Select your sheet tab and choose <strong>Comma-separated values (.csv)</strong></div>
+        <div><span class="n">03 &nbsp;</span>Click <strong>Publish</strong> — copy the URL for live mode, or click it to download for file upload</div>
       </div>
     </div>
   </div>
@@ -238,12 +252,12 @@
   <!-- Main content (hidden until CSV loaded) -->
   <div id="mainContent" style="display:none;">
     <div id="recentSection" style="margin-bottom:2.5rem;">
-      <p class="section-label">Listened This Week</p>
-      <div class="recent-shelf" id="recentShelf"></div>
+      <div class="section-head"><span class="n">01</span><h2>Listened this week</h2></div>
+      <div class="chartboard" id="recentShelf"></div>
     </div>
 
-    <p class="section-label">Top Rated</p>
-    <div class="top-shelf" id="topShelf"></div>
+    <div class="section-head"><span class="n">02</span><h2>Top rated</h2></div>
+    <div class="chartboard" id="topShelf"></div>
 
     <div class="tabs">
       <button class="tab active" onclick="switchTab('stats', this)">Stats</button>
@@ -255,17 +269,17 @@
     <div id="panel-stats" class="panel active">
       <div class="metrics-grid" id="metricsRow"></div>
       <div class="charts-row">
-        <div class="chart-box"><p class="chart-title">Albums by Decade</p><div id="decadeChart"></div></div>
-        <div class="chart-box"><p class="chart-title">Albums by Genre</p><div id="genreChart"></div></div>
+        <div class="chart-box"><p class="chart-title">Albums by decade</p><div id="decadeChart"></div></div>
+        <div class="chart-box"><p class="chart-title">Albums by genre</p><div id="genreChart"></div></div>
       </div>
       <div class="charts-row">
-        <div class="chart-box"><p class="chart-title">Avg Rating by Decade</p><div id="decadeRatingChart"></div></div>
-        <div class="chart-box"><p class="chart-title">Avg Rating by Genre</p><div id="genreRatingChart"></div></div>
+        <div class="chart-box"><p class="chart-title">Avg rating by decade</p><div id="decadeRatingChart"></div></div>
+        <div class="chart-box"><p class="chart-title">Avg rating by genre</p><div id="genreRatingChart"></div></div>
       </div>
     </div>
 
     <div id="panel-all" class="panel">
-      <div class="top-shelf" id="allShelf"></div>
+      <div class="tile-grid" id="allShelf"></div>
     </div>
 
     <div id="panel-byrelease" class="panel">
@@ -278,11 +292,15 @@
   </div>
 
 </div>
-<div id="loadingState" style="display:none;text-align:center;padding:6rem 1rem;color:var(--color-text-secondary);font-size:14px;">Loading your albums…</div>
+<div id="loadingState">Loading your albums…</div>
 <div class="toast" id="toast"></div>
 
 <script>
 let albums = [];
+
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -299,6 +317,12 @@ function switchTab(tab, el) {
 
   if (tab === 'byrelease') renderSortedShelf('releaseShelf', 'release');
   if (tab === 'bylistened') renderSortedShelf('listenedShelf', 'listened');
+}
+
+function extractYear(str) {
+  if (!str) return null;
+  const match = String(str).match(/\b(19\d{2}|20\d{2})\b/);
+  return match ? parseInt(match[1]) : null;
 }
 
 function renderSortedShelf(containerId, mode) {
@@ -321,8 +345,8 @@ function renderSortedShelf(containerId, mode) {
     years.forEach(yr => groups[yr].sort((a,b) => b.rating - a.rating));
     container.innerHTML = years.map(yr => `
       <div style="margin-bottom:2rem;">
-        <p class="section-label" style="margin-bottom:12px;">${yr}</p>
-        <div class="top-shelf">${groups[yr].map(a => makeAlbumCard(a).outerHTML).join('')}</div>
+        <p class="section-label">${escapeHtml(yr)}</p>
+        <div class="tile-grid">${groups[yr].map(a => makeAlbumTile(a).outerHTML).join('')}</div>
       </div>`).join('');
 
   } else {
@@ -343,14 +367,14 @@ function renderSortedShelf(containerId, mode) {
 
     const sections = Object.keys(groups).map(key => `
       <div style="margin-bottom:2rem;">
-        <p class="section-label" style="margin-bottom:12px;">${key}</p>
-        <div class="top-shelf">${groups[key].map(a => makeAlbumCard(a).outerHTML).join('')}</div>
+        <p class="section-label">${escapeHtml(key)}</p>
+        <div class="tile-grid">${groups[key].map(a => makeAlbumTile(a).outerHTML).join('')}</div>
       </div>`).join('');
 
     const noDateSection = noDate.length ? `
       <div style="margin-bottom:2rem;">
-        <p class="section-label" style="margin-bottom:12px;">No date</p>
-        <div class="top-shelf">${noDate.map(a => makeAlbumCard(a).outerHTML).join('')}</div>
+        <p class="section-label">No date</p>
+        <div class="tile-grid">${noDate.map(a => makeAlbumTile(a).outerHTML).join('')}</div>
       </div>` : '';
 
     container.innerHTML = sections + noDateSection;
@@ -366,6 +390,7 @@ function resetToUpload() {
   document.getElementById('mainContent').style.display = 'none';
   document.getElementById('uploadScreen').style.display = 'block';
   document.getElementById('reloadBtn').style.display = 'none';
+  document.getElementById('tally').style.display = 'none';
   const fi = document.getElementById('fileInput');
   if (fi) fi.value = '';
 }
@@ -472,7 +497,7 @@ async function fetchAlbumInfo(artist, title) {
 
         // Release year — buried in wiki summary or tracks
         if (data.album.wiki && data.album.wiki.published) {
-          const yr = data.album.wiki.published.match(/(19|20)\d{2}/);
+          const yr = data.album.wiki.published.match(/(19|20)\d{2}/);
           if (yr) result.releaseYear = yr[0];
         }
 
@@ -514,68 +539,51 @@ function initials(title) {
   return (title || '?').split(' ').slice(0,2).map(w => w[0] || '').join('').toUpperCase() || '?';
 }
 
-function starsStr(rating) {
-  const full = Math.round(rating / 2);
-  return '★'.repeat(Math.max(0,full)) + '☆'.repeat(Math.max(0,5-full)) + '  ' + rating.toFixed(1);
-}
-
 function ratingColor(r) {
-  if (r >= 8) return '#27a868';
-  if (r >= 6) return '#c9a84c';
-  return '#c0392b';
+  if (r >= 8) return 'var(--good)';
+  if (r >= 6) return 'var(--mid)';
+  return 'var(--low)';
 }
 
-function makeAlbumCard(a) {
-  const card = document.createElement('div');
-  card.className = 'album-card';
-  const coverDiv = document.createElement('div');
-  coverDiv.className = 'cover';
-  coverDiv.dataset.albumKey = a.title + '::' + a.artist;
-  if (a.art) {
-    const img = document.createElement('img');
-    img.src = a.art; img.alt = a.title + ' cover'; img.loading = 'lazy';
-    coverDiv.appendChild(img);
-  } else {
-    const ph = document.createElement('div');
-    ph.className = 'cover-ph'; ph.textContent = initials(a.title);
-    coverDiv.appendChild(ph);
-  }
-  const badge = document.createElement('div');
-  badge.className = 'rating-badge';
-  badge.textContent = a.rating.toFixed(1);
-  badge.style.color = ratingColor(a.rating);
-  coverDiv.appendChild(badge);
-  card.appendChild(coverDiv);
-  const body = document.createElement('div');
-  body.className = 'card-body';
-  body.innerHTML = `<p class="album-title" title="${a.title}">${a.title}</p>
-    <p class="album-artist">${a.artist}</p>
-    <p class="album-stars">${starsStr(a.rating)}</p>
-    ${a.favTracks ? `<p class="album-tracks" title="${a.favTracks}">♪ ${a.favTracks}</p>` : ''}`;
-  card.appendChild(body);
-  return card;
+function albumKey(a) {
+  return a.title + '::' + a.artist;
 }
 
-function makeRecentCard(a) {
-  const card = document.createElement('div');
-  card.className = 'recent-card';
-  const coverDiv = document.createElement('div');
-  coverDiv.className = 'recent-cover';
-  coverDiv.dataset.albumKey = a.title + '::' + a.artist;
-  if (a.art) {
-    coverDiv.innerHTML = `<img src="${a.art}" alt="${a.title}" loading="lazy">`;
-  } else {
-    coverDiv.innerHTML = `<div class="recent-cover-ph">${initials(a.title)}</div>`;
-  }
-  card.appendChild(coverDiv);
-  const info = document.createElement('div');
-  info.className = 'recent-info';
-  info.innerHTML = `<p class="recent-title" title="${a.title}">${a.title}</p>
-    <p class="recent-artist">${a.artist}</p>
-    <p class="recent-date">${a.dateListened}</p>
-    <p class="recent-stars">${starsStr(a.rating)}</p>`;
-  card.appendChild(info);
-  return card;
+function coverInnerHTML(a) {
+  return a.art
+    ? `<img src="${a.art}" alt="${escapeHtml(a.title)} cover" loading="lazy">`
+    : escapeHtml(initials(a.title));
+}
+
+function makeAlbumTile(a) {
+  const tile = document.createElement('div');
+  tile.className = 'tile';
+  tile.innerHTML = `
+    <div class="tile-cov" data-album-key="${escapeHtml(albumKey(a))}">${coverInnerHTML(a)}
+      <span class="tile-badge" style="color:${ratingColor(a.rating)}">${a.rating.toFixed(1)}</span>
+    </div>
+    <div class="tile-body">
+      <p class="tile-title" title="${escapeHtml(a.title)}">${escapeHtml(a.title)}</p>
+      <p class="tile-artist">${escapeHtml(a.artist)}</p>
+      ${a.favTracks ? `<p class="tile-tracks" title="${escapeHtml(a.favTracks)}">♪ ${escapeHtml(a.favTracks)}</p>` : ''}
+    </div>`;
+  return tile;
+}
+
+function makeChartRow(a, leading, showYear) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  const yr = showYear ? (extractYear(a.releaseDate) || '') : '';
+  row.innerHTML = `
+    <span class="rank">${escapeHtml(leading)}</span>
+    <div class="cov" data-album-key="${escapeHtml(albumKey(a))}">${coverInnerHTML(a)}</div>
+    <div class="ti">
+      <p class="title" title="${escapeHtml(a.title)}">${escapeHtml(a.title)}</p>
+      <p class="artist">${escapeHtml(a.artist)}</p>
+    </div>
+    <span class="yr">${escapeHtml(yr)}</span>
+    <span class="sc" style="color:${ratingColor(a.rating)}">${a.rating.toFixed(1)}</span>`;
+  return row;
 }
 
 function parseDate(str) {
@@ -589,6 +597,10 @@ function parseDate(str) {
   return isNaN(d.getTime()) ? null : d;
 }
 
+function formatShortDate(d) {
+  return (d.getMonth()+1).toString().padStart(2,'0') + '/' + d.getDate().toString().padStart(2,'0');
+}
+
 function renderBarChart(id, data, maxVal, colorFn) {
   const el = document.getElementById(id);
   el.innerHTML = '';
@@ -598,12 +610,12 @@ function renderBarChart(id, data, maxVal, colorFn) {
   }
   data.forEach(item => {
     const pct = maxVal > 0 ? Math.round(item.value / maxVal * 100) : 0;
-    const color = colorFn ? colorFn(item.value) : 'var(--gold)';
+    const color = colorFn ? colorFn(item.value) : 'var(--chart-blue)';
     const row = document.createElement('div');
     row.className = 'bar-row';
-    row.innerHTML = `<span class="bar-label" title="${item.label}">${item.label}</span>
+    row.innerHTML = `<span class="bar-label" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%; background:${color};"></div></div>
-      <span class="bar-val">${item.display}</span>`;
+      <span class="bar-val">${escapeHtml(item.display)}</span>`;
     el.appendChild(row);
   });
 }
@@ -616,16 +628,10 @@ function renderStats() {
   const topArtist = Object.entries(artistMap).sort((a,b)=>b[1]-a[1])[0];
 
   document.getElementById('metricsRow').innerHTML = `
-    <div class="metric"><p class="metric-label">Total Albums</p><p class="metric-value">${albums.length}</p></div>
-    <div class="metric"><p class="metric-label">Avg Rating</p><p class="metric-value" style="color:${ratingColor(avg)}">${avg.toFixed(1)}</p></div>
+    <div class="metric"><p class="metric-label">Total albums</p><p class="metric-value">${albums.length}</p></div>
+    <div class="metric"><p class="metric-label">Avg rating</p><p class="metric-value" style="color:${ratingColor(avg)}">${avg.toFixed(1)}</p></div>
     <div class="metric"><p class="metric-label">Artists</p><p class="metric-value">${Object.keys(artistMap).length}</p></div>
-    <div class="metric"><p class="metric-label">Top Artist</p><p class="metric-value" style="font-size:15px;padding-top:4px;">${topArtist ? topArtist[0] : '—'}</p></div>`;
-
-  function extractYear(str) {
-    if (!str) return null;
-    const match = String(str).match(/\b(19\d{2}|20\d{2})\b/);
-    return match ? parseInt(match[1]) : null;
-  }
+    <div class="metric"><p class="metric-label">Top artist</p><p class="metric-value" style="font-size:16px;text-transform:uppercase;">${topArtist ? escapeHtml(topArtist[0]) : '—'}</p></div>`;
 
   const decadeCount = {}, decadeRatings = {};
   albums.forEach(a => {
@@ -638,7 +644,7 @@ function renderStats() {
     }
   });
   const decData = Object.entries(decadeCount).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,v])=>({label:k,value:v,display:String(v)}));
-  renderBarChart('decadeChart', decData, Math.max(...decData.map(d=>d.value),1), ()=>'var(--gold)');
+  renderBarChart('decadeChart', decData, Math.max(...decData.map(d=>d.value),1), ()=>'var(--chart-blue)');
 
   const decRateData = Object.entries(decadeRatings).filter(([,v])=>v.length).sort((a,b)=>a[0]<b[0]?-1:1)
     .map(([k,v])=>{ const a=v.reduce((s,x)=>s+x,0)/v.length; return {label:k,value:a,display:a.toFixed(1)}; });
@@ -655,7 +661,7 @@ function renderStats() {
   });
   const genData = Object.entries(genreCount).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>({label:k,value:v,display:String(v)}));
   genData.length
-    ? renderBarChart('genreChart', genData, Math.max(...genData.map(d=>d.value),1), ()=>'var(--gold)')
+    ? renderBarChart('genreChart', genData, Math.max(...genData.map(d=>d.value),1), ()=>'var(--flag)')
     : (document.getElementById('genreChart').innerHTML = '<p class="no-data">Add a Genre column to your sheet to see this.</p>');
 
   const genRateData = Object.entries(genreRatings).filter(([,v])=>v.length)
@@ -671,7 +677,7 @@ async function processCSV(text) {
   if (!rows.length) { showToast('No album rows found — check your column names.'); return; }
 
   albums = rows.map(normalize);
-  showToast(`Loaded ${albums.length} albums ✓`);
+  showToast(`Loaded ${albums.length} albums`);
 
   const byRating = [...albums].sort((a,b) => b.rating - a.rating);
   const top6 = byRating.slice(0,6);
@@ -679,15 +685,15 @@ async function processCSV(text) {
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const recent = withDates.filter(a => parseDate(a.dateListened) >= oneWeekAgo);
 
-  // Render cards immediately with placeholders
+  // Render rows immediately with placeholders
   const topShelf = document.getElementById('topShelf');
   topShelf.innerHTML = '';
-  top6.forEach(a => topShelf.appendChild(makeAlbumCard(a)));
+  top6.forEach((a,i) => topShelf.appendChild(makeChartRow(a, String(i+1).padStart(2,'0'), true)));
 
   const recentShelf = document.getElementById('recentShelf');
   recentShelf.innerHTML = '';
   if (recent.length) {
-    recent.forEach(a => recentShelf.appendChild(makeRecentCard(a)));
+    recent.forEach(a => recentShelf.appendChild(makeChartRow(a, formatShortDate(parseDate(a.dateListened)), true)));
     document.getElementById('recentSection').style.display = 'block';
   } else {
     document.getElementById('recentSection').style.display = 'none';
@@ -695,13 +701,15 @@ async function processCSV(text) {
 
   const allShelf = document.getElementById('allShelf');
   allShelf.innerHTML = '';
-  byRating.forEach(a => allShelf.appendChild(makeAlbumCard(a)));
+  byRating.forEach(a => allShelf.appendChild(makeAlbumTile(a)));
 
   // Show UI immediately, then fetch art and update cards as images arrive
   document.getElementById('uploadScreen').style.display = 'none';
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('mainContent').style.display = 'block';
   document.getElementById('reloadBtn').style.display = 'block';
+  document.getElementById('tallyCount').textContent = albums.length;
+  document.getElementById('tally').style.display = 'block';
 
   // Fetch art, release year, and genre progressively for all albums
   // Use Promise.all so we can re-render stats once everything has settled
@@ -711,8 +719,8 @@ async function processCSV(text) {
     // Art
     if (info.art) {
       a.art = info.art;
-      document.querySelectorAll(`[data-album-key="${CSS.escape(a.title + '::' + a.artist)}"]`).forEach(coverEl => {
-        coverEl.innerHTML = `<img src="${info.art}" alt="${a.title} cover" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+      document.querySelectorAll(`[data-album-key="${CSS.escape(albumKey(a))}"]`).forEach(coverEl => {
+        coverEl.innerHTML = `<img src="${info.art}" alt="${escapeHtml(a.title)} cover" loading="lazy">`;
       });
     }
 
