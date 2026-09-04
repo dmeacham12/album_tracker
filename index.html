@@ -731,12 +731,9 @@ async function processCSV(text) {
 
 // Auto-load on page open — skip input screen entirely
 window.addEventListener('DOMContentLoaded', () => {
-  // Hide upload screen immediately
   document.getElementById('uploadScreen').style.display = 'none';
-  // Show a loading indicator
-  document.getElementById('emptyState').style.display = 'block';
-  document.getElementById('emptyState').innerHTML = '<div style="text-align:center;padding:4rem 1rem;color:var(--text2);font-size:14px;">Loading your albums…</div>';
-  // Load from baked-in URL
+  document.getElementById('mainContent').innerHTML = '<div style="text-align:center;padding:6rem 1rem;color:var(--color-text-secondary);font-size:14px;">Loading your albums…</div>';
+  document.getElementById('mainContent').style.display = 'block';
   document.getElementById('csvUrl').value = SHEET_URL;
   loadFromUrl();
 });
