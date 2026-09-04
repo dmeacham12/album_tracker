@@ -386,6 +386,11 @@ function renderSortedShelf(containerId, mode) {
 // Leave empty ('') to show the input screen instead.
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSp3fA94KoiKePOhU1f_44EWyqzWDuQmZRmaVb2KOtMLxQn0S3cLl6MzMZeInyIVMcO1MzNO1c9i-uO/pub?output=csv';
 
+// Precomputed art/release-date/genre cache, kept fresh by a scheduled GitHub Action
+// (scripts/enrich.js). Loaded relative to this page, so it must live at data/enriched.json
+// alongside this file wherever it's hosted.
+const ENRICHED_URL = 'data/enriched.json';
+
 function resetToUpload() {
   document.getElementById('mainContent').style.display = 'none';
   document.getElementById('uploadScreen').style.display = 'block';
@@ -548,10 +553,11 @@ async function fetchFromLastfm(artist, title) {
           if (yr) result.releaseYear = yr[0];
         }
 
-        // Top genre tag (skip generic ones)
-        const skipTags = new Set(['seen live','albums i own','spotify','favourite albums','love']);
+        // Top genre tag — skip generic ones, plus bare years ("2022") and decades ("80s"),
+        // which show up as tags on Last.fm but aren't genres
+        const skipTags = new Set(['seen live','albums i own','spotify','favourite albums','love','vinyl','cd','compilation','soundtrack']);
         const tags = (data.album.tags && data.album.tags.tag) || [];
-        const topTag = tags.find(t => !skipTags.has(t.name.toLowerCase()));
+        const topTag = tags.find(t => !skipTags.has(t.name.toLowerCase()) && !/^\d{2,4}s?$/i.test(t.name.trim()));
         if (topTag) result.genre = topTag.name;
       }
     }
@@ -743,6 +749,26 @@ async function processCSV(text) {
   albums = rows.map(normalize);
   showToast(`Loaded ${albums.length} albums`);
 
+  // Load the precomputed cache (kept fresh by a scheduled GitHub Action — see
+  // scripts/enrich.js) so most albums get real art/release date/genre immediately,
+  // with zero live API calls. Only albums missing from it (added since the last
+  // enrichment run) fall back to fetching MusicBrainz/Last.fm/iTunes live below —
+  // this is what keeps the page fast for visitors instead of every visitor's browser
+  // separately hitting MusicBrainz's ~1 req/sec limit.
+  let cachedInfo = {};
+  try {
+    const res = await fetch(ENRICHED_URL, { cache: 'no-store' });
+    if (res.ok) cachedInfo = await res.json();
+  } catch (e) { /* no cache yet — falls back to live fetch below */ }
+
+  albums.forEach(a => {
+    const cached = cachedInfo[albumKey(a)];
+    if (!cached) return;
+    if (cached.art) a.art = cached.art;
+    if (cached.releaseYear && !a.releaseDate) a.releaseDate = cached.releaseYear;
+    if (cached.genre && !a.genre) a.genre = cached.genre;
+  });
+
   const byRating = [...albums].sort((a,b) => b.rating - a.rating);
   const top6 = byRating.slice(0,6);
   const withDates = albums.filter(a => parseDate(a.dateListened)).sort((a,b) => parseDate(b.dateListened)-parseDate(a.dateListened));
@@ -775,9 +801,11 @@ async function processCSV(text) {
   document.getElementById('tallyCount').textContent = albums.length;
   document.getElementById('tally').style.display = 'block';
 
-  // Fetch art, release year, and genre progressively for all albums
-  // Use Promise.all so we can re-render stats once everything has settled
-  Promise.all(byRating.map(async (a) => {
+  // Only albums missing from the precomputed cache need a live fetch — typically just
+  // whatever's been added to the sheet since the last scheduled enrichment run.
+  const needsLiveFetch = byRating.filter(a => !cachedInfo[albumKey(a)]);
+
+  Promise.all(needsLiveFetch.map(async (a) => {
     const info = await fetchAlbumInfo(a.artist, a.title);
 
     // Art
