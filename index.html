@@ -485,27 +485,29 @@ async function fetchAlbumInfo(artist, title) {
     }
   } catch(e) { console.warn('Last.fm fetch failed:', artist, title, e); }
 
-  // Fallback: iTunes for art only
-  if (!result.art) {
+  // Fallback: iTunes for art AND release year (more reliable than Last.fm wiki)
+  if (!result.art || !result.releaseYear) {
     try {
       const q = encodeURIComponent(artist + ' ' + title);
       const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=3`);
       if (res.ok) {
         const data = await res.json();
         if (data.results && data.results.length > 0) {
-          const imgUrl = data.results[0].artworkUrl100;
-          if (imgUrl) result.art = imgUrl.replace('100x100bb', '600x600bb');
-          // iTunes also has release date
-          if (!result.releaseYear && data.results[0].releaseDate) {
-            const yr = data.results[0].releaseDate.match(/(19|20)\d{2}/);
-            if (yr) result.releaseYear = yr[0];
+          const hit = data.results[0];
+          if (!result.art) {
+            const imgUrl = hit.artworkUrl100;
+            if (imgUrl) result.art = imgUrl.replace('100x100bb', '600x600bb');
+          }
+          if (!result.releaseYear && hit.releaseDate) {
+            const yr = hit.releaseDate.match(/^(\d{4})/);
+            if (yr) result.releaseYear = yr[1];
           }
         }
       }
     } catch(e) { console.warn('iTunes fallback failed:', artist, title, e); }
   }
 
-  return result;
+    return result;
 }
 
 function initials(title) {
