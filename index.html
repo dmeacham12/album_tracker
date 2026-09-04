@@ -699,6 +699,18 @@ function renderBarChart(id, data, maxVal, colorFn) {
   });
 }
 
+// Blends a category's own average toward the overall average, weighted by how many
+// albums are actually in it — so a decade/genre with only 1-2 ratings doesn't swing
+// wildly to the top or bottom of the chart. MIN_COUNT acts like MIN_COUNT "phantom"
+// albums rated at the overall average; a category needs roughly that many real ratings
+// before its own average dominates. Same idea as IMDB's weighted rating formula.
+const WEIGHTED_AVG_MIN_COUNT = 3;
+function weightedAverage(ratings, globalAvg) {
+  const v = ratings.length;
+  const mean = ratings.reduce((s,x) => s+x, 0) / v;
+  return (v / (v + WEIGHTED_AVG_MIN_COUNT)) * mean + (WEIGHTED_AVG_MIN_COUNT / (v + WEIGHTED_AVG_MIN_COUNT)) * globalAvg;
+}
+
 function renderStats() {
   const rated = albums.filter(a => a.rating > 0);
   const avg = rated.length ? rated.reduce((s,a) => s+a.rating,0) / rated.length : 0;
@@ -726,7 +738,7 @@ function renderStats() {
   renderBarChart('decadeChart', decData, Math.max(...decData.map(d=>d.value),1), ()=>'var(--chart-blue)');
 
   const decRateData = Object.entries(decadeRatings).filter(([,v])=>v.length).sort((a,b)=>a[0]<b[0]?-1:1)
-    .map(([k,v])=>{ const a=v.reduce((s,x)=>s+x,0)/v.length; return {label:k,value:a,display:a.toFixed(1)}; });
+    .map(([k,v])=>{ const wa = weightedAverage(v, avg); return {label:k,value:wa,display:wa.toFixed(1)}; });
   renderBarChart('decadeRatingChart', decRateData.slice(0,6), 10, ratingColor);
 
   const genreCount = {}, genreRatings = {};
@@ -744,7 +756,7 @@ function renderStats() {
     : (document.getElementById('genreChart').innerHTML = '<p class="no-data">Add a Genre column to your sheet to see this.</p>');
 
   const genRateData = Object.entries(genreRatings).filter(([,v])=>v.length)
-    .map(([k,v])=>{ const a=v.reduce((s,x)=>s+x,0)/v.length; return {label:k,value:a,display:a.toFixed(1)}; })
+    .map(([k,v])=>{ const wa = weightedAverage(v, avg); return {label:k,value:wa,display:wa.toFixed(1)}; })
     .sort((a,b)=>b.value-a.value).slice(0,6);
   genRateData.length
     ? renderBarChart('genreRatingChart', genRateData, 10, ratingColor)
