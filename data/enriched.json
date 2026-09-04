@@ -1,0 +1,262 @@
+{
+  "Audioslave::Audioslave": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/ed071004b3a64afb8b2a8397aad1bed4.png",
+    "releaseYear": "2003",
+    "genre": "hard rock"
+  },
+  "Songs For The Deaf::Queens of the Stone Age": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/1319ef46e1da47f5c7dd7afdfb11aa53.jpg",
+    "releaseYear": "2002",
+    "genre": "stoner rock"
+  },
+  "By the Way::Red Hot Chili Peppers": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/f95067353057a3c59fe6ba90469e56c6.png",
+    "releaseYear": "2002",
+    "genre": "rock"
+  },
+  "Rage Against The Machine::Rage Against The Machine": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/8f25a0a061254740c74a40a4e16337d6.png",
+    "releaseYear": "1991",
+    "genre": "alternative metal"
+  },
+  "OK Computer::Radiohead": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/62d26c6cb4ac4bdccb8f3a2a0fd55421.png",
+    "releaseYear": "1997",
+    "genre": "alternative rock"
+  },
+  "In Utero::Nirvana": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/f8b772fdce8284a7c20cc254c7b32796.png",
+    "releaseYear": "1993",
+    "genre": "grunge"
+  },
+  "Nevermind::Nirvana": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/e8693de0a153e609b3eaebb42d62e8be.png",
+    "releaseYear": "1991",
+    "genre": "grunge"
+  },
+  "The Bends::Radiohead": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/9ea9931e129bb5efd3606866901855b5.jpg",
+    "releaseYear": "1996",
+    "genre": "alternative rock"
+  },
+  "Dirt::Alice in Chains": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/6f5180404cd849dcb9d1c108300befc3.png",
+    "releaseYear": "1992",
+    "genre": "grunge"
+  },
+  "Mellon Collie and the Infinite Sadness::The Smashing Pumpkins": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/53c91ae34b9b56739396c5f8c6bee32d.jpg",
+    "releaseYear": "1995",
+    "genre": "alternative rock"
+  },
+  "In Rainbows::Radiohead": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/9dbcd9399ac3e622b4f508323155b644.jpg",
+    "releaseYear": "2007",
+    "genre": "alternative rock"
+  },
+  "Enter The Wu-Tang::Wu-Tang Clan": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/1177fc915ce7bd5221d184a0675b4b88.jpg",
+    "releaseYear": "1993",
+    "genre": "boom bap"
+  },
+  "The Great Divide: The Last of The Bugs::Noah Kahan": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/977005a5dfd23e7e66b704812ea4fe4a.jpg",
+    "releaseYear": "2026",
+    "genre": null
+  },
+  "Elephant::The White Stripes": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/a8a319c1765e46ec8d79aec6e3088727.png",
+    "releaseYear": "2003",
+    "genre": "alternative rock"
+  },
+  "Mr. Wonderful::Action Bronson": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/540008489e214926c942f91d0241f16c.jpg",
+    "releaseYear": "2015",
+    "genre": "hip hop"
+  },
+  "Stick Season::Noah Kahan": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/370510f1781a9bd351389b6633c517ed.jpg",
+    "releaseYear": "2022",
+    "genre": null
+  },
+  "Lateralus::TOOL": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/338b62d0f68d5ad50c3ba0dea89b36ac.jpg",
+    "releaseYear": "2002",
+    "genre": "progressive metal"
+  },
+  "Toxicity::System of a Down": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/faa79372c53139010902e67938ccf78e.jpg",
+    "releaseYear": "2002",
+    "genre": "alternative metal"
+  },
+  "MM..FOOD::MF Doom": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/7d1a24c15c32327454fb83f6177c0b76.png",
+    "releaseYear": "2004",
+    "genre": "hip hop"
+  },
+  "How to: Friend, Love, Freefall::Rainbow Kitten Suprise": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/e3/99/a9/e399a90b-774b-3c4a-f675-0d5f3aa39d7f/075679752369.jpg/600x600bb.jpg",
+    "releaseYear": "2022",
+    "genre": null
+  },
+  "Tha Carter III::Lil Wayne": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/c4b2ba3c3720cf8b8705f30cfc4c0d10.png",
+    "releaseYear": "2008",
+    "genre": "hip hop"
+  },
+  "Only For Dolphins::Action Bronson": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/87201ab17186960b95f1d0a8c69e2709.jpg",
+    "releaseYear": "2020",
+    "genre": "hip hop"
+  },
+  "An Awesome Wave::alt-J": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/a701bd388c95415ac140405686cdd0af.png",
+    "releaseYear": "2012",
+    "genre": "alternative rock"
+  },
+  "Hatful of Hallow::The Smiths": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/7d7e688392c1e49c2075e00786f99f84.png",
+    "releaseYear": "1984",
+    "genre": "indie"
+  },
+  "Tell Me I’m Pretty::Cage the Elephant": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/606b4b0531702875aeedd49b0126b296.jpg",
+    "releaseYear": "2015",
+    "genre": "alternative rock"
+  },
+  "Modern Vampires Of The City::Vampire Weekend": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/b16f6605f041c9e4f4aae10812c38d9a.jpg",
+    "releaseYear": "2013",
+    "genre": "indie rock"
+  },
+  "American Idiot::Green Day": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/5bcb675866706c229ad9f77188b8ac44.jpg",
+    "releaseYear": "2004",
+    "genre": "punk"
+  },
+  "The Queen Is Dead::The Smiths": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/fac0b27adf403efed8b368d3a236ab61.jpg",
+    "releaseYear": "1986",
+    "genre": "jangle pop"
+  },
+  "Yoshimi Battles The Pink Robots::The Flaming Lips": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/8e0c41249f1d437e8dc20b2ff9043262.png",
+    "releaseYear": "2002",
+    "genre": "neo-psychedelia"
+  },
+  "Oops!… I Did It Again::Britney Spears": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/fa111741f3d746529554ffbb54918161.jpg",
+    "releaseYear": "2000",
+    "genre": "pop"
+  },
+  "Kid A::Radiohead": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/2ed343318c844d19cd897ec67fad11c4.png",
+    "releaseYear": "2000",
+    "genre": "electronic"
+  },
+  "Currents::Tame Impala": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/dd45b0438a315aed98b5830aa2fc43c5.jpg",
+    "releaseYear": "2015",
+    "genre": "psychedelic rock"
+  },
+  "Eat the Elephant::A Perfect Circle": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/c69f29c04cdebcbe1ad41d67124b863e.jpg",
+    "releaseYear": "2018",
+    "genre": "alternative rock"
+  },
+  "If You're Feeling Sinister::Belle and Sebastian": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/dc0afbb17fcd4f96cfca1ad31fcb55a3.png",
+    "releaseYear": "1996",
+    "genre": "indie pop"
+  },
+  "Graceland::Paul Simon": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/6dcd4921856a43fec390a969e8346838.png",
+    "releaseYear": "1986",
+    "genre": "pop"
+  },
+  "Evil Empire::Rage Against the Machine": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/715a8ec5267b8b21d3f6c06bcca8dbd1.jpg",
+    "releaseYear": "1996",
+    "genre": "hard rock"
+  },
+  "Rumours::Fleetwood Mac": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/349d64820e124b77cb5275ab03042693.png",
+    "releaseYear": "1977",
+    "genre": "rock"
+  },
+  "Every Hero Needs a Villain::CZARFACE": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/ca78734b1bd8cfd4bf35f95b0259268c.jpg",
+    "releaseYear": "2015",
+    "genre": "hip hop"
+  },
+  "Nothing's Shocking::Jane's Addiction": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/911b3d6ceee82f4a158371352478f9b5.jpg",
+    "releaseYear": "1988",
+    "genre": "alternative rock"
+  },
+  "Siamese Dream::The Smashing Pumpkins": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/53131f63cde3d29e26930209b91fce57.jpg",
+    "releaseYear": "1993",
+    "genre": "alternative rock"
+  },
+  "Gorillaz::Gorillaz": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/86fc45f14a789e9fee32a99ea9036d3d.png",
+    "releaseYear": "2001",
+    "genre": "electronic"
+  },
+  "AM::Arctic Monkeys": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/f579e414e20f40969185e41182d72472.png",
+    "releaseYear": "2013",
+    "genre": "alternative rock"
+  },
+  "A Moon Shaped Pool::Radiohead": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/28db3fdca036fb53c62754694a89d3fd.jpg",
+    "releaseYear": "2016",
+    "genre": "art rock"
+  },
+  "Czarface Meets Metal Face::CZARFACE": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/912260be169114f7f8f1668285d0ef8a.jpg",
+    "releaseYear": "2018",
+    "genre": "hip hop"
+  },
+  "Californication::Red Hot Chili Peppers": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/1469e23c2f2b476b9ca68f87cb29bcd1.png",
+    "releaseYear": "2000",
+    "genre": "pop rock"
+  },
+  "Stadium Arcadium::Red Hot Chili Peppers": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/fb7d1a6c6e5240c48159d08b17ea022b.png",
+    "releaseYear": "2006",
+    "genre": "alternative rock"
+  },
+  "Ten::Pearl Jam": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/4dfa0959e9534f8dcfd24d5dc5110589.jpg",
+    "releaseYear": "1991",
+    "genre": "grunge"
+  },
+  "The Eminem Show::Eminem": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/74768435b4f70689863aa76f888d62a3.jpg",
+    "releaseYear": "2002",
+    "genre": "hip hop"
+  },
+  "Trouble::Ray LaMontagne": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/5204b80b65b405e8bf1359475e941b3d.jpg",
+    "releaseYear": "2012",
+    "genre": "folk"
+  },
+  "...Like Clockwork::Queens of the Stone Age": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/9872bc77018f9ba97f4bf504e25e1380.png",
+    "releaseYear": "2013",
+    "genre": "alternative rock"
+  },
+  "Illmatic::Nas": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/8dce63c224a643b78b39caeb27aadf8b.png",
+    "releaseYear": "1994",
+    "genre": "hip hop"
+  },
+  "Marrow Deep::Mastodon": {
+    "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/1d4a53c162066b06a013307d83298d45.png",
+    "releaseYear": "2026",
+    "genre": "progressive metal"
+  }
+}
