@@ -278,6 +278,7 @@
   </div>
 
 </div>
+<div id="loadingState" style="display:none;text-align:center;padding:6rem 1rem;color:var(--color-text-secondary);font-size:14px;">Loading your albums…</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -696,6 +697,7 @@ async function processCSV(text) {
 
   // Show UI immediately, then fetch art and update cards as images arrive
   document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('loadingState').style.display = 'none';
   document.getElementById('mainContent').style.display = 'block';
   document.getElementById('reloadBtn').style.display = 'block';
 
@@ -732,8 +734,7 @@ async function processCSV(text) {
 // Auto-load on page open — skip input screen entirely
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('uploadScreen').style.display = 'none';
-  document.getElementById('mainContent').innerHTML = '<div style="text-align:center;padding:6rem 1rem;color:var(--color-text-secondary);font-size:14px;">Loading your albums…</div>';
-  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('loadingState').style.display = 'block';
   document.getElementById('csvUrl').value = SHEET_URL;
   loadFromUrl();
 });
