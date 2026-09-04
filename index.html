@@ -88,7 +88,10 @@
 
   /* Album tile grid (All Albums / By Release / By Listen) */
   .tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-bottom: 2.5rem; }
-  .tile { background: var(--paper); box-shadow: 0 0 0 1px var(--line); }
+  /* min-width: 0 overrides the grid item's default auto min-width, which otherwise
+     equals its unwrapped title text's full width and blows out the column for any
+     tile with a long title, making columns (and the covers inside them) uneven widths */
+  .tile { background: var(--paper); box-shadow: 0 0 0 1px var(--line); min-width: 0; }
   .tile-cov { width: 100%; aspect-ratio: 1; background: var(--paper-sunk); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 30px; color: var(--text3); }
   .tile-cov img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .tile-badge { position: absolute; top: 6px; right: 6px; background: var(--paper); font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 3px 7px; box-shadow: 0 0 0 1px var(--line); }
@@ -638,7 +641,7 @@ function makeAlbumTile(a) {
     <div class="tile-body">
       <p class="tile-title" title="${escapeHtml(a.title)}">${escapeHtml(a.title)}</p>
       <p class="tile-artist">${escapeHtml(a.artist)}</p>
-      <p class="tile-tracks"${a.favTracks ? ` title="${escapeHtml(a.favTracks)}"` : ''}>${a.favTracks ? '♪ ' + escapeHtml(a.favTracks) : ' '}</p>
+      <p class="tile-tracks"${a.favTracks ? ` title="${escapeHtml(a.favTracks)}"` : ''}>${a.favTracks ? '♪ ' + escapeHtml(a.favTracks) : ' '}</p>
     </div>`;
   return tile;
 }
