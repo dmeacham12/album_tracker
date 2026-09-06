@@ -83,11 +83,13 @@
   .ti .title { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ti .artist { font-size: 12px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ti .tracks { font-size: 11px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  /* Album/track titles link out to Spotify search — inherit color by default so they
-     don't read as generic blue links, and only reveal themselves on hover/focus */
-  .tile-title a, .ti .title a { color: inherit; text-decoration: none; }
-  .tile-title a:hover, .ti .title a:hover, .tile-title a:focus-visible, .ti .title a:focus-visible { text-decoration: underline; text-decoration-color: var(--flag); }
-  .ext { font-size: 10px; color: var(--text3); margin-left: 3px; }
+  /* Title + Spotify button sit side by side; the title truncates on its own so the
+     button never gets pushed off or squeezed by a long title */
+  .title-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .title-row .title, .title-row .tile-title { flex: 1; min-width: 0; margin: 0; }
+  .spotify-btn { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; opacity: 0.55; transition: opacity 0.15s, transform 0.15s; }
+  .spotify-btn:hover, .spotify-btn:focus-visible { opacity: 1; transform: scale(1.08); }
+  .spotify-btn img { display: block; width: 15px; height: 15px; }
 
   .yr { font-family: var(--font-mono); font-size: 12px; color: var(--text2); text-align: right; }
   .sc { font-family: var(--font-mono); font-weight: 500; font-size: 14px; text-align: right; }
@@ -634,8 +636,12 @@ function spotifyUrl(a) {
   return `https://open.spotify.com/search/${encodeURIComponent(a.artist + ' ' + a.title)}`;
 }
 
-function titleLinkHTML(a) {
-  return `<a href="${escapeHtml(spotifyUrl(a))}" target="_blank" rel="noopener noreferrer">${escapeHtml(a.title)}<span class="ext">↗</span></a>`;
+// Spotify's icon, embedded as a data URI so the site stays a single file with nothing
+// extra to host. Sourced from Wikimedia Commons (Spotify_logo_without_text.svg).
+const SPOTIFY_ICON = 'data:image/png;base64,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';
+
+function spotifyButtonHTML(a) {
+  return `<a class="spotify-btn" href="${escapeHtml(spotifyUrl(a))}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHtml(a.title)} on Spotify" title="Open on Spotify"><img src="${SPOTIFY_ICON}" alt="" width="15" height="15"></a>`;
 }
 
 function makeAlbumTile(a) {
@@ -646,7 +652,10 @@ function makeAlbumTile(a) {
       <span class="tile-badge" style="color:${ratingColor(a.rating)}">${a.rating.toFixed(1)}</span>
     </div>
     <div class="tile-body">
-      <p class="tile-title" title="${escapeHtml(a.title)} — open in Spotify">${titleLinkHTML(a)}</p>
+      <div class="title-row">
+        <p class="tile-title" title="${escapeHtml(a.title)}">${escapeHtml(a.title)}</p>
+        ${spotifyButtonHTML(a)}
+      </div>
       <p class="tile-artist">${escapeHtml(a.artist)}</p>
       <p class="tile-tracks"${a.favTracks ? ` title="${escapeHtml(a.favTracks)}"` : ''}>${a.favTracks ? '♪ ' + escapeHtml(a.favTracks) : ' '}</p>
     </div>`;
@@ -663,7 +672,10 @@ function makeChartRow(a, leadingHtml, showYear) {
     <span class="rank">${leadingHtml}</span>
     <div class="cov" data-album-key="${escapeHtml(albumKey(a))}">${coverInnerHTML(a)}</div>
     <div class="ti">
-      <p class="title" title="${escapeHtml(a.title)} — open in Spotify">${titleLinkHTML(a)}</p>
+      <div class="title-row">
+        <p class="title" title="${escapeHtml(a.title)}">${escapeHtml(a.title)}</p>
+        ${spotifyButtonHTML(a)}
+      </div>
       <p class="artist">${escapeHtml(a.artist)}</p>
     </div>
     <span class="yr">${escapeHtml(yr)}</span>
