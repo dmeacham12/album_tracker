@@ -120,6 +120,11 @@
   @media (max-width: 600px) { .charts-row { grid-template-columns: 1fr; } }
   .chart-box { background: var(--paper); padding: 1.25rem; }
   .chart-title { font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; color: var(--text2); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .chart-hint { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text3); margin-left: 6px; }
+  .charts-row-single { grid-template-columns: 1fr; }
+  .bar-row.clickable { cursor: pointer; }
+  .bar-row.clickable:hover .bar-label { color: var(--text); }
+  .bar-row.clickable:hover .bar-fill { opacity: 0.82; }
   .bar-row { display: grid; grid-template-columns: 62px 1fr 28px; align-items: center; gap: 10px; margin-bottom: 11px; }
   .bar-label { font-size: 11.5px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bar-wrap { height: 14px; background: var(--line); position: relative; }
@@ -275,12 +280,16 @@
     <div id="panel-stats" class="panel active">
       <div class="metrics-grid" id="metricsRow"></div>
       <div class="charts-row">
-        <div class="chart-box"><p class="chart-title">Albums by decade</p><div id="decadeChart"></div></div>
+        <div class="chart-box"><p class="chart-title">Albums by decade <span class="chart-hint">tap a bar to browse</span></p><div id="decadeChart"></div></div>
         <div class="chart-box"><p class="chart-title">Albums by genre</p><div id="genreChart"></div></div>
       </div>
+      <div id="decadeShelfResult"></div>
       <div class="charts-row">
         <div class="chart-box"><p class="chart-title">Avg rating by decade</p><div id="decadeRatingChart"></div></div>
         <div class="chart-box"><p class="chart-title">Avg rating by genre</p><div id="genreRatingChart"></div></div>
+      </div>
+      <div class="charts-row charts-row-single">
+        <div class="chart-box"><p class="chart-title">Ratings distribution</p><div id="distributionChart"></div></div>
       </div>
     </div>
 
@@ -571,44 +580,25 @@ async function fetchFromLastfm(artist, title) {
   return result;
 }
 
-// Fetches art, release year, and top genre. MusicBrainz (rate-limited, so queued
-// separately) and Last.fm run concurrently so the throttled MusicBrainz lookups never
-// delay art from showing up. MusicBrainz wins for release year/genre when it has an answer.
-async function fetchAlbumInfo(artist, title) {
-  const result = { art: null, releaseYear: null, genre: null };
-
-  const [mb, lastfm] = await Promise.all([
-    fetchFromMusicBrainz(artist, title),
-    fetchFromLastfm(artist, title)
-  ]);
-
-  result.art = lastfm.art;
-  result.releaseYear = mb.releaseYear || lastfm.releaseYear;
-  result.genre = mb.genre || lastfm.genre;
-
-  // Fallback: iTunes for art AND release year (only if still missing)
-  if (!result.art || !result.releaseYear) {
-    try {
-      const q = encodeURIComponent(artist + ' ' + title);
-      const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=3`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-          const hit = data.results[0];
-          if (!result.art) {
-            const imgUrl = hit.artworkUrl100;
-            if (imgUrl) result.art = imgUrl.replace('100x100bb', '600x600bb');
-          }
-          if (!result.releaseYear && hit.releaseDate) {
-            const yr = hit.releaseDate.match(/^(\d{4})/);
-            if (yr) result.releaseYear = yr[1];
-          }
+// iTunes: last-resort fallback for art and release year only.
+async function fetchFromItunes(artist, title) {
+  const result = { art: null, releaseYear: null };
+  try {
+    const q = encodeURIComponent(artist + ' ' + title);
+    const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=3`);
+    if (res.ok) {
+      const data = await res.json();
+      const hit = data.results && data.results[0];
+      if (hit) {
+        if (hit.artworkUrl100) result.art = hit.artworkUrl100.replace('100x100bb', '600x600bb');
+        if (hit.releaseDate) {
+          const yr = hit.releaseDate.match(/^(\d{4})/);
+          if (yr) result.releaseYear = yr[1];
         }
       }
-    } catch(e) { console.warn('iTunes fallback failed:', artist, title, e); }
-  }
-
-    return result;
+    }
+  } catch(e) { console.warn('iTunes fallback failed:', artist, title, e); }
+  return result;
 }
 
 function initials(title) {
@@ -641,7 +631,7 @@ function makeAlbumTile(a) {
     <div class="tile-body">
       <p class="tile-title" title="${escapeHtml(a.title)}">${escapeHtml(a.title)}</p>
       <p class="tile-artist">${escapeHtml(a.artist)}</p>
-      <p class="tile-tracks"${a.favTracks ? ` title="${escapeHtml(a.favTracks)}"` : ''}>${a.favTracks ? '♪ ' + escapeHtml(a.favTracks) : ' '}</p>
+      <p class="tile-tracks"${a.favTracks ? ` title="${escapeHtml(a.favTracks)}"` : ''}>${a.favTracks ? '♪ ' + escapeHtml(a.favTracks) : ' '}</p>
     </div>`;
   return tile;
 }
@@ -683,7 +673,7 @@ function formatStackedDate(d) {
   return `<span class="date-stack"><span class="mon">${mon}</span><span class="day">${day}</span></span>`;
 }
 
-function renderBarChart(id, data, maxVal, colorFn) {
+function renderBarChart(id, data, maxVal, colorFn, onClick) {
   const el = document.getElementById(id);
   el.innerHTML = '';
   if (!data.length) {
@@ -694,10 +684,11 @@ function renderBarChart(id, data, maxVal, colorFn) {
     const pct = maxVal > 0 ? Math.round(item.value / maxVal * 100) : 0;
     const color = colorFn ? colorFn(item.value) : 'var(--chart-blue)';
     const row = document.createElement('div');
-    row.className = 'bar-row';
+    row.className = 'bar-row' + (onClick ? ' clickable' : '');
     row.innerHTML = `<span class="bar-label" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%; background:${color};"></div></div>
       <span class="bar-val">${escapeHtml(item.display)}</span>`;
+    if (onClick) row.addEventListener('click', () => onClick(item));
     el.appendChild(row);
   });
 }
@@ -738,7 +729,7 @@ function renderStats() {
     }
   });
   const decData = Object.entries(decadeCount).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,v])=>({label:k,value:v,display:String(v)}));
-  renderBarChart('decadeChart', decData, Math.max(...decData.map(d=>d.value),1), ()=>'var(--chart-blue)');
+  renderBarChart('decadeChart', decData, Math.max(...decData.map(d=>d.value),1), ()=>'var(--chart-blue)', item => showDecadeShelf(item.label));
 
   const decRateData = Object.entries(decadeRatings).filter(([,v])=>v.length).sort((a,b)=>a[0]<b[0]?-1:1)
     .map(([k,v])=>{ const wa = weightedAverage(v, avg); return {label:k,value:wa,display:wa.toFixed(1)}; });
@@ -764,6 +755,77 @@ function renderStats() {
   genRateData.length
     ? renderBarChart('genreRatingChart', genRateData, 10, ratingColor)
     : (document.getElementById('genreRatingChart').innerHTML = '<p class="no-data">Add a Genre column to see avg ratings.</p>');
+
+  renderDistributionChart();
+}
+
+// Count of albums per whole-point rating bucket (0-1, 1-2, ... 9-10) — a quick read on
+// whether ratings actually spread out or cluster, which the averages alone don't show.
+function renderDistributionChart() {
+  const rated = albums.filter(a => a.rating > 0);
+  const buckets = Array.from({length: 10}, (_, i) => ({ lo: i, hi: i + 1, count: 0 }));
+  rated.forEach(a => {
+    const idx = Math.min(9, Math.max(0, Math.floor(a.rating)));
+    buckets[idx].count++;
+  });
+  const data = buckets.map(b => ({ label: `${b.lo}-${b.hi}`, value: b.count, display: String(b.count) }));
+  renderBarChart('distributionChart', data, Math.max(...data.map(d => d.value), 1), () => 'var(--chart-blue)');
+}
+
+// Toggles a browsable shelf of one decade's albums beneath the "Albums by decade" chart —
+// click the same decade again to close it.
+let activeDecadeShelf = null;
+function showDecadeShelf(decadeLabel) {
+  const container = document.getElementById('decadeShelfResult');
+  if (activeDecadeShelf === decadeLabel) {
+    activeDecadeShelf = null;
+    container.innerHTML = '';
+    return;
+  }
+  activeDecadeShelf = decadeLabel;
+  const matches = albums.filter(a => {
+    const yr = extractYear(a.releaseDate);
+    return yr && (Math.floor(yr / 10) * 10) + 's' === decadeLabel;
+  }).sort((a, b) => b.rating - a.rating);
+
+  container.innerHTML = `
+    <div class="section-head" style="margin:1.5rem 0 12px;"><h2>${escapeHtml(decadeLabel)}</h2></div>
+    <div class="tile-grid">${matches.map(a => makeAlbumTile(a).outerHTML).join('')}</div>`;
+}
+
+// Enriches one album. Art applies to the DOM as soon as Last.fm (or its iTunes
+// fallback) resolves — it never waits on MusicBrainz's rate-limited queue, which can
+// take minutes to work through a large library. Release year/genre still wait on
+// MusicBrainz since it's the trusted source for those, so they arrive later.
+async function enrichAlbum(a) {
+  const lastfmP = fetchFromLastfm(a.artist, a.title);
+  const mbP = fetchFromMusicBrainz(a.artist, a.title);
+  const lastfm = await lastfmP;
+
+  let itunes = null;
+  if (lastfm.art) {
+    a.art = lastfm.art;
+  } else {
+    itunes = await fetchFromItunes(a.artist, a.title);
+    if (itunes.art) a.art = itunes.art;
+  }
+  if (a.art) {
+    document.querySelectorAll(`[data-album-key="${CSS.escape(albumKey(a))}"]`).forEach(coverEl => {
+      coverEl.innerHTML = `<img src="${a.art}" alt="${escapeHtml(a.title)} cover" loading="lazy">`;
+    });
+  }
+
+  const mb = await mbP;
+  let releaseYear = mb.releaseYear || lastfm.releaseYear || (itunes && itunes.releaseYear);
+  if (!releaseYear && !itunes) {
+    // Neither MusicBrainz nor Last.fm had a date, and art never needed iTunes — ask it now.
+    itunes = await fetchFromItunes(a.artist, a.title);
+    releaseYear = itunes.releaseYear;
+  }
+  if (releaseYear && !a.releaseDate) a.releaseDate = releaseYear;
+
+  const genre = mb.genre || lastfm.genre;
+  if (genre && !a.genre) a.genre = genre;
 }
 
 async function processCSV(text) {
@@ -829,27 +891,7 @@ async function processCSV(text) {
   // whatever's been added to the sheet since the last scheduled enrichment run.
   const needsLiveFetch = byRating.filter(a => !cachedInfo[albumKey(a)]);
 
-  Promise.all(needsLiveFetch.map(async (a) => {
-    const info = await fetchAlbumInfo(a.artist, a.title);
-
-    // Art
-    if (info.art) {
-      a.art = info.art;
-      document.querySelectorAll(`[data-album-key="${CSS.escape(albumKey(a))}"]`).forEach(coverEl => {
-        coverEl.innerHTML = `<img src="${info.art}" alt="${escapeHtml(a.title)} cover" loading="lazy">`;
-      });
-    }
-
-    // Release year — only fill if blank in sheet
-    if (info.releaseYear && !a.releaseDate) {
-      a.releaseDate = info.releaseYear;
-    }
-
-    // Genre — only fill if blank in sheet
-    if (info.genre && !a.genre) {
-      a.genre = info.genre;
-    }
-  })).then(() => {
+  Promise.all(needsLiveFetch.map(enrichAlbum)).then(() => {
     // Re-render stats, and whichever sorted shelf is currently open, now that
     // release dates and genres have finished populating (MusicBrainz is rate-limited,
     // so this can take a while — refresh instead of leaving the tab stuck on "Unknown").
