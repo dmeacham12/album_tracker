@@ -83,6 +83,12 @@
   .ti .title { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ti .artist { font-size: 12px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ti .tracks { font-size: 11px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Album/track titles link out to Spotify search — inherit color by default so they
+     don't read as generic blue links, and only reveal themselves on hover/focus */
+  .tile-title a, .ti .title a { color: inherit; text-decoration: none; }
+  .tile-title a:hover, .ti .title a:hover, .tile-title a:focus-visible, .ti .title a:focus-visible { text-decoration: underline; text-decoration-color: var(--flag); }
+  .ext { font-size: 10px; color: var(--text3); margin-left: 3px; }
+
   .yr { font-family: var(--font-mono); font-size: 12px; color: var(--text2); text-align: right; }
   .sc { font-family: var(--font-mono); font-weight: 500; font-size: 14px; text-align: right; }
 
@@ -621,6 +627,17 @@ function coverInnerHTML(a) {
     : escapeHtml(initials(a.title));
 }
 
+// Keyless Spotify search link — Spotify's real search API needs a client secret, which
+// can't be safely embedded in a public static file (anyone could view-source and lift
+// it). The plain web search URL needs no key and reliably lands on the right album.
+function spotifyUrl(a) {
+  return `https://open.spotify.com/search/${encodeURIComponent(a.artist + ' ' + a.title)}`;
+}
+
+function titleLinkHTML(a) {
+  return `<a href="${escapeHtml(spotifyUrl(a))}" target="_blank" rel="noopener noreferrer">${escapeHtml(a.title)}<span class="ext">↗</span></a>`;
+}
+
 function makeAlbumTile(a) {
   const tile = document.createElement('div');
   tile.className = 'tile';
@@ -629,7 +646,7 @@ function makeAlbumTile(a) {
       <span class="tile-badge" style="color:${ratingColor(a.rating)}">${a.rating.toFixed(1)}</span>
     </div>
     <div class="tile-body">
-      <p class="tile-title" title="${escapeHtml(a.title)}">${escapeHtml(a.title)}</p>
+      <p class="tile-title" title="${escapeHtml(a.title)} — open in Spotify">${titleLinkHTML(a)}</p>
       <p class="tile-artist">${escapeHtml(a.artist)}</p>
       <p class="tile-tracks"${a.favTracks ? ` title="${escapeHtml(a.favTracks)}"` : ''}>${a.favTracks ? '♪ ' + escapeHtml(a.favTracks) : ' '}</p>
     </div>`;
@@ -646,7 +663,7 @@ function makeChartRow(a, leadingHtml, showYear) {
     <span class="rank">${leadingHtml}</span>
     <div class="cov" data-album-key="${escapeHtml(albumKey(a))}">${coverInnerHTML(a)}</div>
     <div class="ti">
-      <p class="title" title="${escapeHtml(a.title)}">${escapeHtml(a.title)}</p>
+      <p class="title" title="${escapeHtml(a.title)} — open in Spotify">${titleLinkHTML(a)}</p>
       <p class="artist">${escapeHtml(a.artist)}</p>
     </div>
     <span class="yr">${escapeHtml(yr)}</span>
