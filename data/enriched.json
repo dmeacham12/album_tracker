@@ -258,5 +258,80 @@
     "art": "https://lastfm-img.freetls.fastly.net/i/u/300x300/1d4a53c162066b06a013307d83298d45.png",
     "releaseYear": "2026",
     "genre": "progressive metal"
+  },
+  "CZARFACE meets Frankie Pulitzer::CZARFACE": {
+    "art": "https://coverartarchive.org/release-group/38a772f7-abb9-4e52-bfd0-313a3b5b65f4/front-500",
+    "releaseYear": "2026",
+    "genre": "hip hop"
+  },
+  "Stankonia::OutKast": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/d6/21/fb/d621fbde-c099-6794-7102-2692f10c4dbb/886448814283.jpg/600x600bb.jpg",
+    "releaseYear": "2000",
+    "genre": "hip hop"
+  },
+  "Run the Jewels 3::Run the Jewels": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/7b/44/c2/7b44c2aa-12c4-4617-9fec-8942664e640f/198704918407_Cover.jpg/600x600bb.jpg",
+    "releaseYear": "2016",
+    "genre": "hardcore hip hop"
+  },
+  "Country::Medium Build": {
+    "art": "https://coverartarchive.org/release-group/45d2833b-dc2f-4d35-9523-93919d8cd247/front-500",
+    "releaseYear": "2024",
+    "genre": null
+  },
+  "King of Having Fun::Medium Build": {
+    "art": "https://coverartarchive.org/release-group/990a7042-28ad-477a-bb38-eb4b96461e7f/front-500",
+    "releaseYear": "2026",
+    "genre": null
+  },
+  "Swimming::Mac Miller": {
+    "art": "https://coverartarchive.org/release-group/8bddc517-1322-40a9-b33b-c65248b52b54/front-500",
+    "releaseYear": "2018",
+    "genre": "hip hop"
+  },
+  "El Camino::The Black Keys": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/55/39/ca/5539caf8-333e-5ad2-06ca-eaf5d84cd264/mzm.nmxwulyo.jpg/600x600bb.jpg",
+    "releaseYear": "2011",
+    "genre": "blues rock"
+  },
+  "Everyone Gets Everything They Want::Tom Morello": {
+    "art": "https://coverartarchive.org/release-group/744372c3-6396-4994-b09b-b24a4d7ea358/front-500",
+    "releaseYear": "2026",
+    "genre": null
+  },
+  "Rolling Papers::Wiz Khalifa": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music/9c/dc/2f/mzi.jbbjckxp.jpg/600x600bb.jpg",
+    "releaseYear": "2011",
+    "genre": "hip hop"
+  },
+  "The Bedlam in Goliath::The Mars Volta": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/72/d9/3a/72d93a3d-1e95-de2a-385c-5592c997a25f/00602517629011.rgb.jpg/600x600bb.jpg",
+    "releaseYear": "2008",
+    "genre": "alternative punk"
+  },
+  "Chocolate Starfish and the Hotdog Flavored Water::Limp Bizkit": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b8/5c/12/b85c124b-2da7-802a-4447-dfa1e50147b6/15UMGIM64609.rgb.jpg/600x600bb.jpg",
+    "releaseYear": "2000",
+    "genre": null
+  },
+  "Morning View::Incubus": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/2c/95/ec/2c95ecf2-8303-50b6-2e19-ea6b28424af9/mzi.yficmzdc.jpg/600x600bb.jpg",
+    "releaseYear": "2001",
+    "genre": "alternative rock"
+  },
+  "Jolene::Dolly Parton": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/cb/f4/a5/cbf4a557-e9cb-94a5-4482-0f9bb6984928/828768124123.jpg/600x600bb.jpg",
+    "releaseYear": "1974",
+    "genre": "country"
+  },
+  "Poems, Prayers and Promises::John Denver": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/52/ed/f3/52edf3b6-5b73-c52d-e3f6-4473412eec7c/886443406193.jpg/600x600bb.jpg",
+    "releaseYear": "1971",
+    "genre": "country rock"
+  },
+  "Shallow Grave::The Tallest Man On Earth": {
+    "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/a0/37/16/a0371670-45af-e032-2ba3-483e46c6c0bd/mzi.pnyetyjq.jpg/600x600bb.jpg",
+    "releaseYear": "2008",
+    "genre": "contemporary folk"
   }
 }

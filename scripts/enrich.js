@@ -3,8 +3,9 @@
 // Last.fm/iTunes themselves — this script pays the (rate-limited) API cost once, on a
 // schedule, instead of once per visitor.
 //
-// Already-cached albums are skipped entirely, so a normal run only has to enrich
-// whatever's new since the last run — safe and fast to run daily.
+// Albums that already have cover art are skipped, so a normal run only has to enrich
+// whatever's new. Albums whose art couldn't be found are retried on every run instead of
+// being cached as "no art" forever.
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -13,12 +14,14 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_PATH = path.join(__dirname, '..', 'data', 'enriched.json');
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSp3fA94KoiKePOhU1f_44EWyqzWDuQmZRmaVb2KOtMLxQn0S3cLl6MzMZeInyIVMcO1MzNO1c9i-uO/pub?output=csv';
-const LASTFM_KEY = 'b25b959554ed76058ac220b7b2e0a026';
+// The page uses this same key in every visitor's browser, so it often hits Last.fm's rate
+// limit. To keep this script out of that, add your own Last.fm key as a repo secret named
+// LASTFM_API_KEY (optional — without it the script falls back to the shared key, and to
+// iTunes and Cover Art Archive when Last.fm is throttled).
+const LASTFM_KEY = process.env.LASTFM_API_KEY || 'b25b959554ed76058ac220b7b2e0a026';
+const LASTFM_PLACEHOLDER = '2a96cbd8b46e442fc41c2b86b821562f'; // Last.fm's grey "no image" star
 
-// MusicBrainz asks contributors to identify themselves with a descriptive User-Agent —
-// personalize this with your repo URL or an email so MusicBrainz can reach you if this
-// script ever needs throttling back further.
-const MB_USER_AGENT = 'AlbumTrackerEnrichScript/1.0 ( https://github.com/YOUR-USERNAME/YOUR-REPO )';
+const MB_USER_AGENT = 'AlbumTrackerEnrichScript/1.0 ( https://github.com/dmeacham12/album_tracker )';
 
 function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
@@ -47,6 +50,27 @@ function albumKey(title, artist) {
   return title + '::' + artist;
 }
 
+// ── iTunes matching ──
+// iTunes search is fuzzy and will happily return a single by a different artist, so a hit is
+// only used when both the artist and the album title actually line up.
+function normName(s) {
+  return String(s || '').toLowerCase().replace(/&/g, 'and').replace(/\(.*?\)|\[.*?\]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function squash(s) {
+  return s.replace(/ /g, '');
+}
+function pickItunesHit(results, artist, title) {
+  const a = squash(normName(artist)), t = squash(normName(title));
+  if (!a || !t) return null;
+  return (results || []).find(r => {
+    if (/ - single$/i.test(r.collectionName || '')) return false;
+    const ra = squash(normName(r.artistName)), rt = squash(normName(r.collectionName));
+    const artistOk = ra === a || ra.includes(a) || a.includes(ra);
+    const titleOk = rt === t || rt.startsWith(t) || t.startsWith(rt) || rt.includes(t);
+    return artistOk && titleOk;
+  }) || null;
+}
+
 // MusicBrainz calls are queued and spaced to respect its ~1 req/sec rate limit, with
 // retry-with-backoff on 503 ("slow down") — this runs alone (not fanned out across many
 // visitors), so it can stay close to the documented limit.
@@ -66,9 +90,10 @@ async function mbFetch(url, attempt = 0) {
   return res;
 }
 
-// MusicBrainz is the trusted source for original release date and genre.
+// MusicBrainz is the trusted source for original release date and genre. It also hands back
+// the release-group id, which is how we find cover art on the Cover Art Archive as a last resort.
 async function fetchFromMusicBrainz(artist, title) {
-  const result = { releaseYear: null, genre: null };
+  const result = { releaseYear: null, genre: null, mbid: null };
   try {
     const q = `releasegroup:"${title.replace(/"/g, '')}" AND artist:"${artist.replace(/"/g, '')}"`;
     const res = await mbFetch(`https://musicbrainz.org/ws/2/release-group/?query=${encodeURIComponent(q)}&fmt=json&limit=1`);
@@ -76,6 +101,7 @@ async function fetchFromMusicBrainz(artist, title) {
       const data = await res.json();
       const rg = data['release-groups'] && data['release-groups'][0];
       if (rg && rg.score >= 90) {
+        result.mbid = rg.id;
         if (rg['first-release-date']) {
           const yr = rg['first-release-date'].match(/^\d{4}/);
           if (yr) result.releaseYear = yr[0];
@@ -92,6 +118,25 @@ async function fetchFromMusicBrainz(artist, title) {
   return result;
 }
 
+// Last.fm answers a throttled request with HTTP 200 and { error: 29 }, which looks like "album
+// not found" if you only check res.ok. After a couple of throttled replies in one run we stop
+// asking and let iTunes / Cover Art Archive cover the rest.
+let lastfmThrottled = 0;
+async function lastfmGet(url) {
+  if (lastfmThrottled >= 3) return null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.error === 29) { lastfmThrottled++; await sleep(2000 * (attempt + 1)); continue; }
+      return data;
+    }
+    if (res.status === 429 || res.status >= 500) { lastfmThrottled++; await sleep(2000 * (attempt + 1)); continue; }
+    return null;
+  }
+  return null;
+}
+
 // Last.fm: art, plus release year / genre as a fallback only. Its tags are unmoderated
 // folksonomy, so obvious non-genre tags (bare years, decades, formats) are filtered out.
 const LASTFM_SKIP_TAGS = new Set(['seen live', 'albums i own', 'spotify', 'favourite albums', 'love', 'vinyl', 'cd', 'compilation', 'soundtrack']);
@@ -99,27 +144,24 @@ async function fetchFromLastfm(artist, title) {
   const result = { art: null, releaseYear: null, genre: null };
   try {
     const url = `https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LASTFM_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`;
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.album) {
-        const images = data.album.image || [];
-        const mega = images.find(i => i.size === 'mega') || images.find(i => i.size === 'extralarge') || images[images.length - 1];
-        const imgUrl = mega && mega['#text'];
-        if (imgUrl) result.art = imgUrl;
+    const data = await lastfmGet(url);
+    if (data && data.album) {
+      const images = data.album.image || [];
+      const mega = images.find(i => i.size === 'mega') || images.find(i => i.size === 'extralarge') || images[images.length - 1];
+      const imgUrl = mega && mega['#text'];
+      if (imgUrl && !imgUrl.includes(LASTFM_PLACEHOLDER)) result.art = imgUrl;
 
-        if (data.album.wiki && data.album.wiki.published) {
-          const yr = data.album.wiki.published.match(/(19|20)\d{2}/);
-          if (yr) result.releaseYear = yr[0];
-        }
-
-        const tags = (data.album.tags && data.album.tags.tag) || [];
-        const topTag = tags.find(t =>
-          !LASTFM_SKIP_TAGS.has(t.name.toLowerCase()) &&
-          !/^\d{2,4}s?$/i.test(t.name.trim()) // reject bare years ("2022") and decades ("80s")
-        );
-        if (topTag) result.genre = topTag.name;
+      if (data.album.wiki && data.album.wiki.published) {
+        const yr = data.album.wiki.published.match(/(19|20)\d{2}/);
+        if (yr) result.releaseYear = yr[0];
       }
+
+      const tags = (data.album.tags && data.album.tags.tag) || [];
+      const topTag = tags.find(t =>
+        !LASTFM_SKIP_TAGS.has(t.name.toLowerCase()) &&
+        !/^\d{2,4}s?$/i.test(t.name.trim()) // reject bare years ("2022") and decades ("80s")
+      );
+      if (topTag) result.genre = topTag.name;
     }
   } catch (e) { console.warn('Last.fm failed for', artist, '-', title, e.message); }
   return result;
@@ -129,10 +171,10 @@ async function fetchFromItunes(artist, title) {
   const result = { art: null, releaseYear: null };
   try {
     const q = encodeURIComponent(artist + ' ' + title);
-    const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=3`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=8`);
     if (res.ok) {
       const data = await res.json();
-      const hit = data.results && data.results[0];
+      const hit = pickItunesHit(data.results, artist, title);
       if (hit) {
         if (hit.artworkUrl100) result.art = hit.artworkUrl100.replace('100x100bb', '600x600bb');
         if (hit.releaseDate) {
@@ -143,6 +185,19 @@ async function fetchFromItunes(artist, title) {
     }
   } catch (e) { console.warn('iTunes failed for', artist, '-', title, e.message); }
   return result;
+}
+
+// Cover Art Archive: community-uploaded covers keyed by MusicBrainz id. Covers obscure and
+// brand-new releases that Last.fm and iTunes don't have.
+async function fetchFromCoverArchive(mbid) {
+  if (!mbid) return null;
+  const url = `https://coverartarchive.org/release-group/${mbid}/front-500`;
+  try {
+    const res = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    return res.ok ? url : null;
+  } catch {
+    return null;
+  }
 }
 
 async function enrichOne(artist, title) {
@@ -160,6 +215,7 @@ async function enrichOne(artist, title) {
     if (!result.art) result.art = itunes.art;
     if (!result.releaseYear) result.releaseYear = itunes.releaseYear;
   }
+  if (!result.art) result.art = await fetchFromCoverArchive(mb.mbid);
   return result;
 }
 
@@ -177,7 +233,8 @@ async function main() {
   const rows = parseCSV(await res.text());
 
   const cache = await loadExistingCache();
-  let added = 0;
+  let added = 0, retried = 0;
+  const stillNoArt = [];
 
   for (const row of rows) {
     const artist = row['artist'] || '';
@@ -185,16 +242,22 @@ async function main() {
     if (!title) continue;
 
     const key = albumKey(title, artist);
-    if (cache[key]) continue; // already enriched — this is what keeps repeat runs fast
+    const existing = cache[key];
+    if (existing && existing.art) continue; // already has a cover — this is what keeps repeat runs fast
 
-    console.log('Enriching:', key);
-    cache[key] = await enrichOne(artist, title);
-    added++;
+    console.log(existing ? 'Retrying (no art yet):' : 'Enriching:', key);
+    const fresh = await enrichOne(artist, title);
+    cache[key] = existing
+      ? { art: fresh.art || existing.art || null, releaseYear: fresh.releaseYear || existing.releaseYear || null, genre: fresh.genre || existing.genre || null }
+      : fresh;
+    if (existing) retried++; else added++;
+    if (!cache[key].art) stillNoArt.push(key);
   }
 
   await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
   await fs.writeFile(CACHE_PATH, JSON.stringify(cache, null, 2) + '\n');
-  console.log(`Done. ${added} new album(s) enriched, ${Object.keys(cache).length} total in cache.`);
+  console.log(`Done. ${added} new album(s), ${retried} retried, ${Object.keys(cache).length} total in cache.`);
+  if (stillNoArt.length) console.log('Still no cover art for:\n  ' + stillNoArt.join('\n  '));
 }
 
 main().catch(e => {

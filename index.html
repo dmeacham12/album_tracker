@@ -225,7 +225,7 @@
   .screw.tl { top: 10px; left: 10px; --r: 18deg; } .screw.tr { top: 10px; right: 10px; --r: 71deg; }
   .screw.bl { bottom: 10px; left: 10px; --r: 44deg; } .screw.br { bottom: 10px; right: 10px; --r: 9deg; }
 
-  .cassette-label { position: absolute; top: 26px; left: 32px; right: 32px; height: 172px; border-radius: 4px; background: linear-gradient(168deg, #F8F3E5 0%, #EEE7D4 52%, #E0D8C2 100%); box-shadow: 0 0 0 1px rgba(14,12,10,0.7), 0 2px 4px rgba(0,0,0,0.5), inset 0 0 12px rgba(120,98,52,0.16); text-align: left; }
+  .cassette-label { position: absolute; top: 26px; left: 32px; right: 32px; height: 172px; border-radius: 4px; background: linear-gradient(168deg, #F8F3E5 0%, #EEE7D4 52%, #E0D8C2 100%); box-shadow: 0 0 0 1px rgba(14,12,10,0.7), 0 2px 4px rgba(0,0,0,0.5), inset 0 -2px 12px rgba(80,70,52,0.17); text-align: left; }
   .cassette-label::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(172deg, rgba(255,255,255,0.5), rgba(255,255,255,0) 38%); pointer-events: none; }
   .cassette-label::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grain-dark); background-size: 160px; mix-blend-mode: multiply; opacity: 0.5; pointer-events: none; }
   .label-frame { position: absolute; top: 8px; left: 9px; right: 9px; bottom: 8px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(20,18,15,0.16); }
@@ -761,7 +761,8 @@ async function fetchFromLastfm(artist, title) {
         const images = data.album.image || [];
         const mega = images.find(i => i.size === 'mega') || images.find(i => i.size === 'extralarge') || images[images.length - 1];
         const imgUrl = mega && mega['#text'];
-        if (imgUrl && imgUrl.length > 0) result.art = imgUrl;
+        // Last.fm returns its grey "no image" star for albums it has no cover for — not real art
+        if (imgUrl && !imgUrl.includes('2a96cbd8b46e442fc41c2b86b821562f')) result.art = imgUrl;
 
         // Release year — buried in wiki summary or tracks
         if (data.album.wiki && data.album.wiki.published) {
@@ -781,15 +782,37 @@ async function fetchFromLastfm(artist, title) {
   return result;
 }
 
-// iTunes: last-resort fallback for art and release year only.
+// iTunes search is fuzzy and will return a single by a different artist for obscure titles
+// ("Run the Jewels 3" once matched a Lorde single), so a result is only used when both the
+// artist and the album title actually line up.
+function normName(s) {
+  return String(s || '').toLowerCase().replace(/&/g, 'and').replace(/\(.*?\)|\[.*?\]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function squash(s) {
+  return s.replace(/ /g, '');
+}
+function pickItunesHit(results, artist, title) {
+  const a = squash(normName(artist)), t = squash(normName(title));
+  if (!a || !t) return null;
+  return (results || []).find(r => {
+    if (/ - single$/i.test(r.collectionName || '')) return false;
+    const ra = squash(normName(r.artistName)), rt = squash(normName(r.collectionName));
+    const artistOk = ra === a || ra.includes(a) || a.includes(ra);
+    const titleOk = rt === t || rt.startsWith(t) || t.startsWith(rt) || rt.includes(t);
+    return artistOk && titleOk;
+  }) || null;
+}
+
+// iTunes: the main live source for cover art (and a fallback release year). It needs no API
+// key, so unlike Last.fm there's no single shared quota that every visitor's browser burns through.
 async function fetchFromItunes(artist, title) {
   const result = { art: null, releaseYear: null };
   try {
     const q = encodeURIComponent(artist + ' ' + title);
-    const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=3`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=8`);
     if (res.ok) {
       const data = await res.json();
-      const hit = data.results && data.results[0];
+      const hit = pickItunesHit(data.results, artist, title);
       if (hit) {
         if (hit.artworkUrl100) result.art = hit.artworkUrl100.replace('100x100bb', '600x600bb');
         if (hit.releaseDate) {
@@ -816,9 +839,22 @@ function albumKey(a) {
   return a.title + '::' + a.artist;
 }
 
+// A cover that fails to load (a flaky image host, a dead link) gets one retry, then falls
+// back to the initials tile instead of leaving a broken-image icon on the page
+function coverFailed(img) {
+  if (!img.dataset.retried) {
+    img.dataset.retried = '1';
+    const url = img.src;
+    img.removeAttribute('src');
+    setTimeout(() => { img.src = url; }, 1500);
+    return;
+  }
+  img.parentElement.textContent = initials(img.alt.replace(/ cover$/, ''));
+}
+
 function coverInnerHTML(a) {
   return a.art
-    ? `<img src="${a.art}" alt="${escapeHtml(a.title)} cover" loading="lazy">`
+    ? `<img src="${a.art}" alt="${escapeHtml(a.title)} cover" loading="lazy" onerror="coverFailed(this)">`
     : escapeHtml(initials(a.title));
 }
 
@@ -1015,42 +1051,52 @@ function showDecadeShelf(decadeLabel) {
     <div class="tile-grid">${matches.map(a => makeAlbumTile(a).outerHTML).join('')}</div>`;
 }
 
-// Enriches one album. Art applies to the DOM as soon as Last.fm (or its iTunes
-// fallback) resolves — it never waits on MusicBrainz's rate-limited queue, which can
-// take minutes to work through a large library. Release year/genre still wait on
-// MusicBrainz since it's the trusted source for those, so they arrive later.
-async function enrichAlbum(a) {
-  const lastfmP = fetchFromLastfm(a.artist, a.title);
-  const mbP = fetchFromMusicBrainz(a.artist, a.title);
-  const lastfm = await lastfmP;
+// One iTunes lookup per album, shared by the art and metadata loaders below
+const itunesLookups = new Map();
+function lookupItunes(a) {
+  const k = albumKey(a);
+  if (!itunesLookups.has(k)) itunesLookups.set(k, fetchFromItunes(a.artist, a.title));
+  return itunesLookups.get(k);
+}
 
-  let itunes = null;
-  if (lastfm.art) {
-    a.art = lastfm.art;
+// Live cover-art lookup for albums the nightly cache has no cover for yet. iTunes goes first:
+// it needs no key and rate-limits each visitor separately. Last.fm is the backup, since its one
+// key is shared by every visitor and gets rate-limited (which is why newer albums showed
+// initials instead of covers). Art is applied the moment it arrives, never waiting on MusicBrainz.
+async function loadArtLive(a) {
+  const itunes = await lookupItunes(a);
+  if (itunes.art) {
+    a.art = itunes.art;
   } else {
-    itunes = await fetchFromItunes(a.artist, a.title);
-    if (itunes.art) a.art = itunes.art;
+    const lastfm = await fetchFromLastfm(a.artist, a.title);
+    if (lastfm.art) a.art = lastfm.art;
   }
-  if (a.art) {
-    // Target the .art wrapper specifically, not the whole cover container — .tile-cov
-    // also holds the rating badge as a sibling, and overwriting the container's innerHTML
-    // used to wipe that badge out the moment art arrived.
-    document.querySelectorAll(`[data-album-key="${CSS.escape(albumKey(a))}"] .art`).forEach(coverEl => {
-      coverEl.innerHTML = `<img src="${a.art}" alt="${escapeHtml(a.title)} cover" loading="lazy">`;
-    });
-  }
+  if (!a.art) return;
+  // Target the .art wrapper specifically, not the whole cover container — .tile-cov
+  // also holds the rating badge as a sibling, and overwriting the container's innerHTML
+  // used to wipe that badge out the moment art arrived.
+  document.querySelectorAll(`[data-album-key="${CSS.escape(albumKey(a))}"] .art`).forEach(coverEl => {
+    coverEl.innerHTML = `<img src="${a.art}" alt="${escapeHtml(a.title)} cover" loading="lazy" onerror="coverFailed(this)">`;
+  });
+}
 
-  const mb = await mbP;
-  let releaseYear = mb.releaseYear || lastfm.releaseYear || (itunes && itunes.releaseYear);
-  if (!releaseYear && !itunes) {
-    // Neither MusicBrainz nor Last.fm had a date, and art never needed iTunes — ask it now.
-    itunes = await fetchFromItunes(a.artist, a.title);
-    releaseYear = itunes.releaseYear;
-  }
+// Release year and genre for albums with no cache entry at all. MusicBrainz is the trusted
+// source and sits behind a rate-limited queue, so this runs apart from the art lookups.
+async function loadMetaLive(a) {
+  const mb = await fetchFromMusicBrainz(a.artist, a.title);
+  let releaseYear = mb.releaseYear;
+  if (!releaseYear) releaseYear = (await lookupItunes(a)).releaseYear;
   if (releaseYear && !a.releaseDate) a.releaseDate = releaseYear;
+  if (mb.genre && !a.genre) a.genre = mb.genre;
+}
 
-  const genre = mb.genre || lastfm.genre;
-  if (genre && !a.genre) a.genre = genre;
+// Runs worker over items with a few in flight at a time, so a burst of new albums
+// doesn't trip iTunes' per-IP rate limit
+async function runPool(items, worker, size) {
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(size, items.length) }, async () => {
+    while (next < items.length) await worker(items[next++]);
+  }));
 }
 
 async function processCSV(text) {
@@ -1112,11 +1158,16 @@ async function processCSV(text) {
   document.getElementById('tallyCount').textContent = albums.length;
   document.getElementById('tally').style.display = 'block';
 
-  // Only albums missing from the precomputed cache need a live fetch — typically just
-  // whatever's been added to the sheet since the last scheduled enrichment run.
-  const needsLiveFetch = byRating.filter(a => !cachedInfo[albumKey(a)]);
+  // Live lookups only cover what the nightly cache can't: albums with no cover art yet
+  // (new since the last run, or not found anywhere), and — for release year and genre —
+  // albums with no cache entry at all.
+  const needsArt = byRating.filter(a => !a.art);
+  const needsMeta = byRating.filter(a => !cachedInfo[albumKey(a)]);
 
-  Promise.all(needsLiveFetch.map(enrichAlbum)).then(() => {
+  Promise.all([
+    runPool(needsArt, loadArtLive, 3),
+    Promise.all(needsMeta.map(loadMetaLive))
+  ]).then(() => {
     // Re-render stats, and whichever sorted shelf is currently open, now that
     // release dates and genres have finished populating (MusicBrainz is rate-limited,
     // so this can take a while — refresh instead of leaving the tab stuck on "Unknown").
