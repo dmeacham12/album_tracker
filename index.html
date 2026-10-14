@@ -6,7 +6,7 @@
 <title>Album Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -192,7 +192,85 @@
 
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--paper); box-shadow: 0 0 0 1px var(--line2); color: var(--text); font-family: var(--font-mono); font-size: 12.5px; padding: 10px 18px; display: none; z-index: 99; white-space: nowrap; }
 
-  #loadingState { display: none; text-align: center; padding: 6rem 1rem; color: var(--text2); font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  /* ── Cassette loader: smoked see-through shell, handwritten label ── */
+  #loadingState { display: none; padding: 3.5rem 0 2.5rem; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* The shell is built at a fixed 480x307 and scaled to fit by fitCassette(), so the
+     whole thing shrinks as one piece on narrow screens instead of reflowing */
+  .cassette-wrap { position: relative; width: 480px; height: 307px; max-width: 100%; margin: 0 auto; }
+
+  .cassette {
+    --hand: 'Permanent Marker', 'Segoe Print', cursive; --hand-size: 29px; --ink-c: #1b1b1d;
+    --grain-light: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    --grain-dark: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.25  0 0 0 0 0.2  0 0 0 0 0.12  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    position: absolute; top: 0; left: 0; width: 480px; height: 307px; transform-origin: top left; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(8,7,6,0.85), 0 24px 30px -16px rgba(8,10,12,0.55), 0 3px 7px rgba(8,10,12,0.25);
+  }
+  /* The smoked plastic itself: a translucent tint with a bright refracting edge, grain, and two glare bands */
+  .smoke { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(155deg, rgba(86,80,74,0.6), rgba(40,37,35,0.74) 40%, rgba(20,18,17,0.82)); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -2px 5px rgba(0,0,0,0.5), inset 0 0 26px rgba(255,255,255,0.08); }
+  .smoke::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grain-light); background-size: 160px; mix-blend-mode: overlay; opacity: 0.45; pointer-events: none; }
+  .smoke::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background:
+    linear-gradient(112deg, rgba(255,255,255,0) 0 14%, rgba(255,255,255,0.15) 14% 21%, rgba(255,255,255,0) 21% 26%, rgba(255,255,255,0.07) 26% 30%, rgba(255,255,255,0) 30%),
+    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0) 13%); }
+  /* The molded seam where the two shell halves meet */
+  .cassette::after { content: ''; position: absolute; inset: 6px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.07); pointer-events: none; }
+  /* Parts of the mechanism, seen through the shell */
+  .interior { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .tape-run { stroke-dasharray: 7 2; animation: tapeflow 0.9s linear infinite; }
+  @keyframes tapeflow { to { stroke-dashoffset: -18; } }
+
+  .screw { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #b3b0a8, #55524d 55%, #1b1917); box-shadow: 0 0 0 1.5px #0c0b0a, 0 1px 1px 1.5px rgba(255,255,255,0.1); }
+  .screw::before, .screw::after { content: ''; position: absolute; left: 50%; top: 50%; width: 8px; height: 1.6px; margin: -0.8px 0 0 -4px; background: #0d0c0b; box-shadow: 0 0.5px 0 rgba(255,255,255,0.14); transform: rotate(var(--r, 0deg)); }
+  .screw::after { transform: rotate(calc(var(--r, 0deg) + 90deg)); }
+  .screw.tl { top: 10px; left: 10px; --r: 18deg; } .screw.tr { top: 10px; right: 10px; --r: 71deg; }
+  .screw.bl { bottom: 10px; left: 10px; --r: 44deg; } .screw.br { bottom: 10px; right: 10px; --r: 9deg; }
+
+  .cassette-label { position: absolute; top: 26px; left: 32px; right: 32px; height: 172px; border-radius: 4px; background: linear-gradient(168deg, #F8F3E5 0%, #EEE7D4 52%, #E0D8C2 100%); box-shadow: 0 0 0 1px rgba(14,12,10,0.7), 0 2px 4px rgba(0,0,0,0.5), inset 0 0 12px rgba(120,98,52,0.16); text-align: left; }
+  .cassette-label::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(172deg, rgba(255,255,255,0.5), rgba(255,255,255,0) 38%); pointer-events: none; }
+  .cassette-label::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grain-dark); background-size: 160px; mix-blend-mode: multiply; opacity: 0.5; pointer-events: none; }
+  .label-frame { position: absolute; top: 8px; left: 9px; right: 9px; bottom: 8px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(20,18,15,0.16); }
+  .label-stripe { position: absolute; left: 0; right: 0; top: 64px; height: 5px; background: #D8491F; }
+  .label-rule { position: absolute; left: 20px; right: 20px; top: 138px; height: 1px; background: rgba(20,18,15,0.2); }
+  .label-length { position: absolute; top: 82px; right: 20px; font-family: var(--font-display); font-weight: 700; font-size: 34px; line-height: 1; color: #17181a; }
+  .label-meta { position: absolute; bottom: 16px; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.06em; color: #4b463d; }
+  .label-meta.type { right: 20px; } .label-meta.counter { left: 20px; }
+
+  /* Handwriting: pen on paper, slightly crooked, with ink that wobbles at the edges */
+  .label-title { position: absolute; top: 9px; left: 22px; font-family: var(--hand); font-size: var(--hand-size); line-height: 1; white-space: nowrap; color: var(--ink-c); transform: rotate(-1.8deg); transform-origin: 0 60%; filter: url(#ink); }
+  .label-underline { position: absolute; left: 20px; top: 51px; width: 250px; height: 9px; overflow: visible; filter: url(#ink); }
+  .label-underline path { fill: none; stroke: var(--ink-c); stroke-width: 2.2; stroke-linecap: round; }
+  .label-side { position: absolute; right: 24px; top: 11px; width: 42px; height: 42px; display: grid; place-items: center; border: 2.2px solid var(--ink-c); border-radius: 52% 48% 55% 45% / 48% 54% 46% 52%; transform: rotate(-6deg); font-family: var(--hand); font-size: calc(var(--hand-size) * 0.7); line-height: 1; color: var(--ink-c); filter: url(#ink); }
+
+  .label-mech { position: absolute; top: 56px; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 18px; }
+  .reel, .tape-window { position: relative; background: #0e0c0b; overflow: hidden; box-shadow: 0 0 0 1px rgba(14,12,10,0.7), 0 1px 0 1px rgba(255,255,255,0.55), inset 0 4px 7px rgba(0,0,0,0.85); }
+  .reel::after, .tape-window::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(125deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.07) 34%, rgba(255,255,255,0) 35%); }
+  .reel { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .reel-bed { position: absolute; border-radius: 50%; background: conic-gradient(from 210deg, rgba(255,226,196,0) 0 40deg, rgba(255,226,196,0.2) 62deg, rgba(255,226,196,0) 92deg 250deg, rgba(255,226,196,0.1) 272deg, rgba(255,226,196,0) 300deg), repeating-radial-gradient(circle, #3b2417 0 1px, #4d2f1d 1px 2.2px); box-shadow: 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 6px rgba(0,0,0,0.65); }
+  .reel.l .reel-bed { inset: 3px; } .reel.r .reel-bed { inset: 12px; }
+  .reel-teeth { position: absolute; width: 40px; height: 40px; border-radius: 50%; background: repeating-conic-gradient(from 8deg, rgba(0,0,0,0.13) 0 7deg, transparent 7deg 60deg), radial-gradient(circle at 35% 30%, #f3efe4, #d5d0c2 58%, #a29d8e); box-shadow: 0 0 0 1px rgba(0,0,0,0.65), 0 1px 3px rgba(0,0,0,0.6); animation: reelspin 18.75s linear infinite; }
+  .reel-teeth::before { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: #0d0b0a; box-shadow: inset 0 2px 3px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.5); }
+  .reel-teeth::after { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: repeating-conic-gradient(from 0deg, #d8d3c5 0 20deg, transparent 20deg 60deg); -webkit-mask: radial-gradient(circle, transparent 0 5.5px, #000 6px); mask: radial-gradient(circle, transparent 0 5.5px, #000 6px); }
+  .tape-window { width: 96px; height: 62px; border-radius: 3px; }
+  .tape-wound { position: absolute; top: 0; bottom: 0; }
+  .tape-wound.l { left: 0; width: 30px; background: repeating-linear-gradient(90deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 2.5px), linear-gradient(90deg, #3a2217, #6e432b); }
+  .tape-wound.r { right: 0; width: 42px; background: repeating-linear-gradient(90deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 2.5px), linear-gradient(270deg, #3a2217, #5d3824); }
+  .tape-strip { position: absolute; top: 22px; left: 0; right: 0; height: 18px; background: repeating-linear-gradient(90deg, #59331f 0px, #6f4327 12px, #4a2a19 20px, #6f4327 28px, #59331f 40px); background-size: 40px 100%; animation: tapecrawl 0.9s linear infinite; box-shadow: 0 0 6px rgba(0,0,0,0.6) inset; }
+  .tape-strip::after { content: ''; position: absolute; inset: 0; background: linear-gradient(rgba(255,255,255,0.2), rgba(255,255,255,0) 42%, rgba(0,0,0,0.3)); }
+
+  .cassette-foot { position: absolute; left: 32px; right: 32px; bottom: 24px; height: 66px; }
+  .foot-plate { position: absolute; inset: 0; filter: drop-shadow(0 1px 0 rgba(255,255,255,0.14)) drop-shadow(0 -1px 0 rgba(0,0,0,0.5)); }
+  .foot-plate::before { content: ''; position: absolute; inset: 0; clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%); background: linear-gradient(rgba(160,152,142,0.16), rgba(20,18,17,0.42)); }
+  .foot-notch { position: absolute; left: 78px; right: 78px; top: 4px; height: 26px; border-radius: 0 0 7px 7px; background: rgba(8,6,5,0.92); box-shadow: inset 0 3px 6px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.6), 0 1px 0 1px rgba(255,255,255,0.1); overflow: hidden; }
+  .notch-pad { position: absolute; left: 50%; top: 5px; width: 28px; height: 10px; margin-left: -14px; border-radius: 2px; background: linear-gradient(#6a5c4c, #43392e); box-shadow: 0 0 0 1px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.1); }
+  .notch-tape { position: absolute; left: 0; right: 0; bottom: 6px; height: 4px; background: repeating-linear-gradient(90deg, #59331f 0px, #6f4327 6px, #4a2a19 10px, #6f4327 14px, #59331f 20px); background-size: 20px 100%; animation: tapecrawl-s 0.9s linear infinite; box-shadow: 0 1px 0 rgba(255,255,255,0.08); }
+  .foot-holes { position: absolute; left: 0; right: 0; bottom: 5px; display: flex; align-items: center; justify-content: space-between; padding: 0 38px; }
+  .foot-holes i { display: block; width: 9px; height: 9px; border-radius: 50%; background: #070605; box-shadow: inset 0 1px 2px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.14); }
+  .foot-holes i:first-child, .foot-holes i:last-child { width: 13px; height: 13px; }
+  @keyframes reelspin { to { transform: rotate(360deg); } }
+  @keyframes tapecrawl { to { background-position: -40px 0; } }
+  @keyframes tapecrawl-s { to { background-position: -20px 0; } }
+  #loadingState.failed .reel-teeth, #loadingState.failed .tape-strip, #loadingState.failed .notch-tape, #loadingState.failed .tape-run { animation-play-state: paused; }
+  @media (prefers-reduced-motion: reduce) { .reel-teeth, .tape-strip, .notch-tape, .tape-run { animation: none; } }
 
   /* ── Mobile ── */
   @media (max-width: 480px) {
@@ -229,6 +307,67 @@
       <button class="reload-btn" id="reloadBtn" style="display:none;" onclick="resetToUpload()">Change data source</button>
     </div>
   </header>
+
+  <!-- Loading screen: smoked cassette with a handwritten label, spinning reels, crawling tape, and a ticking counter -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <filter id="ink" x="-5%" y="-10%" width="110%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05 0.09" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="1.5"/>
+    </filter>
+  </svg>
+  <div id="loadingState" role="status" aria-live="polite">
+    <span class="sr-only">Loading your albums…</span>
+    <div class="cassette-wrap" id="cassetteWrap" aria-hidden="true">
+        <div class="cassette" id="cassette">
+  
+          <svg class="interior" viewBox="0 0 480 307" aria-hidden="true">
+            <defs>
+              <linearGradient id="roller" x1="0" x2="1"><stop offset="0" stop-color="#bdb8aa"/><stop offset="0.45" stop-color="#f2eee3"/><stop offset="1" stop-color="#9c978a"/></linearGradient>
+              <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6e3dc"/><stop offset="0.5" stop-color="#a9a69f"/><stop offset="1" stop-color="#d8d5ce"/></linearGradient>
+            </defs>
+            <rect x="12" y="12" width="456" height="283" rx="9" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <polygon points="44,8 132,8 124,24 52,24" fill="rgba(244,240,228,0.18)"/>
+            <polygon points="436,8 348,8 356,24 428,24" fill="rgba(244,240,228,0.18)"/>
+            <g fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5">
+              <circle cx="16" cy="16" r="11"/><circle cx="464" cy="16" r="11"/><circle cx="16" cy="291" r="11"/><circle cx="464" cy="291" r="11"/>
+            </g>
+            <path class="tape-run" d="M122 198 L94 238 M358 198 L386 238" fill="none" stroke="#c0824f" stroke-width="3.5"/>
+            <path d="M94 238 H386" fill="none" stroke="#c0824f" stroke-width="3.5"/>
+            <circle cx="94" cy="238" r="9.5" fill="url(#roller)"/><circle cx="94" cy="238" r="2.8" fill="#2a2724"/>
+            <circle cx="386" cy="238" r="9.5" fill="url(#roller)"/><circle cx="386" cy="238" r="2.8" fill="#2a2724"/>
+            <rect x="214" y="247" width="52" height="7" rx="2" fill="url(#silver)"/>
+            <circle cx="221" cy="250.5" r="1.6" fill="#55524d"/><circle cx="259" cy="250.5" r="1.6" fill="#55524d"/>
+          </svg>
+  
+          <div class="smoke"></div>
+          <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+  
+          <div class="cassette-foot">
+            <div class="foot-plate"></div>
+            <div class="foot-notch"><span class="notch-pad"></span><span class="notch-tape"></span></div>
+            <div class="foot-holes"><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+  
+          <div class="cassette-label">
+            <div class="label-frame"></div>
+            <div class="label-stripe"></div>
+            <div class="label-rule"></div>
+            <div class="label-title" id="cassetteMessage">Loading Collection</div>
+            <svg class="label-underline" viewBox="0 0 250 9" aria-hidden="true"><path d="M2 5.5 C 30 1.5, 62 8, 98 4.5 S 168 7.5, 206 3.5 S 238 5, 248 4"/></svg>
+            <div class="label-side">A</div>
+            <div class="label-length">90</div>
+            <div class="label-meta type">TYPE I (NORMAL BIAS)</div>
+            <div class="label-meta counter" id="cassetteCounter">0000</div>
+            <div class="label-mech">
+              <div class="reel l"><div class="reel-bed"></div><div class="reel-teeth"></div></div>
+              <div class="tape-window"><div class="tape-wound l"></div><div class="tape-wound r"></div><div class="tape-strip"></div></div>
+              <div class="reel r"><div class="reel-bed"></div><div class="reel-teeth"></div></div>
+            </div>
+          </div>
+  
+        </div>
+      </div>
+  </div>
 
   <!-- Input screen -->
   <div id="uploadScreen">
@@ -319,7 +458,6 @@
   </div>
 
 </div>
-<div id="loadingState">Loading your albums…</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -334,6 +472,56 @@ function showToast(msg) {
   t.textContent = msg;
   t.style.display = 'block';
   setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+// ── Cassette loading screen ──
+let loadingTimer = null;
+
+// The cassette is drawn at a fixed 480px wide; scale it down as one piece on narrow screens
+function fitCassette() {
+  const wrap = document.getElementById('cassetteWrap');
+  const shell = document.getElementById('cassette');
+  const avail = wrap.parentElement.clientWidth;
+  if (!avail) return;
+  const s = Math.min(1, avail / 480);
+  shell.style.transform = `scale(${s})`;
+  wrap.style.width = (480 * s) + 'px';
+  wrap.style.height = (307 * s) + 'px';
+}
+window.addEventListener('resize', fitCassette);
+
+function stopLoadingTimer() {
+  if (loadingTimer) { clearInterval(loadingTimer); loadingTimer = null; }
+}
+
+function showLoading() {
+  const el = document.getElementById('loadingState');
+  el.classList.remove('failed');
+  document.getElementById('cassetteMessage').textContent = 'Loading Collection';
+  el.style.display = 'block';
+  fitCassette();
+  stopLoadingTimer();
+  let ticks = 0;
+  const counter = document.getElementById('cassetteCounter');
+  loadingTimer = setInterval(() => {
+    ticks++;
+    counter.textContent = String(ticks % 10000).padStart(4, '0');
+  }, 420);
+}
+
+function hideLoading() {
+  stopLoadingTimer();
+  document.getElementById('loadingState').style.display = 'none';
+}
+
+// Only acts if the loader is actually on screen (a failed manual upload shouldn't
+// pop a stopped cassette over the upload screen)
+function failLoading(message) {
+  const el = document.getElementById('loadingState');
+  if (el.style.display !== 'block') return;
+  stopLoadingTimer();
+  el.classList.add('failed');
+  document.getElementById('cassetteMessage').textContent = message;
 }
 
 function switchTab(tab, el) {
@@ -452,6 +640,7 @@ async function loadFromUrl() {
     await processCSV(text);
   } catch(e) {
     showToast('Could not load sheet: ' + e.message);
+    failLoading("Couldn't Load");
   } finally {
     btn.textContent = 'Load'; btn.disabled = false;
   }
@@ -866,7 +1055,7 @@ async function enrichAlbum(a) {
 
 async function processCSV(text) {
   const rows = parseCSV(text);
-  if (!rows.length) { showToast('No album rows found — check your column names.'); return; }
+  if (!rows.length) { showToast('No album rows found — check your column names.'); failLoading('No Albums Found'); return; }
 
   albums = rows.map(normalize);
   showToast(`Loaded ${albums.length} albums`);
@@ -917,7 +1106,7 @@ async function processCSV(text) {
 
   // Show UI immediately, then fetch art and update cards as images arrive
   document.getElementById('uploadScreen').style.display = 'none';
-  document.getElementById('loadingState').style.display = 'none';
+  hideLoading();
   document.getElementById('mainContent').style.display = 'block';
   document.getElementById('reloadBtn').style.display = 'block';
   document.getElementById('tallyCount').textContent = albums.length;
@@ -943,7 +1132,7 @@ async function processCSV(text) {
 // Auto-load on page open — skip input screen entirely
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('uploadScreen').style.display = 'none';
-  document.getElementById('loadingState').style.display = 'block';
+  showLoading();
   document.getElementById('csvUrl').value = SHEET_URL;
   loadFromUrl();
 });
